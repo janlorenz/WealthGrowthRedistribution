@@ -1,13 +1,6 @@
 library(tidyverse)
-d <- read_csv(c(
- "final_data/WealthGrowthRedistribution_Simple_StrippedDown experiment tax wealth gains-table.csv",
- "final_data/WealthGrowthRedistribution_Simple_StrippedDown experiment tax wealth-table.csv",
- "final_data/WealthGrowthRedistribution_Simple_StrippedDown experiment tax wealth N 100K-table.csv",
- "final_data/WealthGrowthRedistribution_Simple_StrippedDown experiment tax wealth N 2,5,20,50 -.000-table.csv",
- "final_data/WealthGrowthRedistribution_Simple_StrippedDown experiment tax wealth gains N 2,5,20,50 -.000-table.csv",
- "final_data/WealthGrowthRedistribution_Simple_StrippedDown experiment tax wealth gains N 100K-table.csv"),
- skip = 6
-)
+library(arrow)
+d <- read_parquet("simdata/WealthGrowthRedistribution_StrippedDown experiments all.parquet")
 
 # Growth rate
 vizspecs_growthrate <- function(g) g +
