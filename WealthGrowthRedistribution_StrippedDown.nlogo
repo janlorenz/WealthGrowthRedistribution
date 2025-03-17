@@ -1289,6 +1289,318 @@ NetLogo 6.4.0
       <value value="0.3"/>
     </enumeratedValueSet>
   </experiment>
+  <experiment name="experiment tax wealth long" repetitions="100" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>mean_wealth_stop_tick</metric>
+    <metric>mean_wealth_past_tick_1</metric>
+    <metric>mean_wealth_past_tick_2</metric>
+    <metric>mean_wealth_past_tick_3</metric>
+    <metric>share_top10_stop_tick</metric>
+    <metric>share_top10_past_tick_1</metric>
+    <metric>share_top10_past_tick_2</metric>
+    <metric>share_top10_past_tick_3</metric>
+    <metric>share_top1_stop_tick</metric>
+    <metric>share_top1_past_tick_1</metric>
+    <metric>share_top1_past_tick_2</metric>
+    <metric>share_top1_past_tick_3</metric>
+    <metric>share_top01_stop_tick</metric>
+    <metric>share_top01_past_tick_1</metric>
+    <metric>share_top01_past_tick_2</metric>
+    <metric>share_top01_past_tick_3</metric>
+    <metric>gini_stop_tick</metric>
+    <metric>gini_past_tick_1</metric>
+    <metric>gini_past_tick_2</metric>
+    <metric>gini_past_tick_3</metric>
+    <metric>tailexp_top10_stop_tick</metric>
+    <metric>tailexp_top10_past_tick_1</metric>
+    <metric>tailexp_top10_past_tick_2</metric>
+    <metric>tailexp_top10_past_tick_3</metric>
+    <metric>tailexp_top5_stop_tick</metric>
+    <metric>tailexp_top5_past_tick_1</metric>
+    <metric>tailexp_top5_past_tick_2</metric>
+    <metric>tailexp_top5_past_tick_3</metric>
+    <metric>tailexp_top1_stop_tick</metric>
+    <metric>tailexp_top1_past_tick_1</metric>
+    <metric>tailexp_top1_past_tick_2</metric>
+    <metric>tailexp_top1_past_tick_3</metric>
+    <metric>volatility_past_tick_1</metric>
+    <metric>volatility_past_tick_2</metric>
+    <metric>volatility_past_tick_3</metric>
+    <metric>stillintop10_past_tick_1</metric>
+    <metric>stillintop10_past_tick_2</metric>
+    <metric>stillintop10_past_tick_3</metric>
+    <metric>stillintop1_past_tick_1</metric>
+    <metric>stillintop1_past_tick_2</metric>
+    <metric>stillintop1_past_tick_3</metric>
+    <metric>stillintop01_past_tick_1</metric>
+    <metric>stillintop01_past_tick_2</metric>
+    <metric>stillintop01_past_tick_3</metric>
+    <metric>growth_rate_all</metric>
+    <metric>growth_rate_past_tick_1</metric>
+    <metric>growth_rate_past_tick_2</metric>
+    <metric>growth_rate_past_tick_3</metric>
+    <enumeratedValueSet variable="past_tick_2">
+      <value value="25"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="mu">
+      <value value="0.02"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="taxrate" first="0" step="0.001" last="0.05"/>
+    <enumeratedValueSet variable="N">
+      <value value="1000"/>
+      <value value="10000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="sigma">
+      <value value="0.3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="past_tick_3">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="tax_regime">
+      <value value="&quot;wealth&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="past_tick_1">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="stop_tick">
+      <value value="1000"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="experiment tax wealth gains long" repetitions="100" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>mean_wealth_stop_tick</metric>
+    <metric>mean_wealth_past_tick_1</metric>
+    <metric>mean_wealth_past_tick_2</metric>
+    <metric>mean_wealth_past_tick_3</metric>
+    <metric>share_top10_stop_tick</metric>
+    <metric>share_top10_past_tick_1</metric>
+    <metric>share_top10_past_tick_2</metric>
+    <metric>share_top10_past_tick_3</metric>
+    <metric>share_top1_stop_tick</metric>
+    <metric>share_top1_past_tick_1</metric>
+    <metric>share_top1_past_tick_2</metric>
+    <metric>share_top1_past_tick_3</metric>
+    <metric>share_top01_stop_tick</metric>
+    <metric>share_top01_past_tick_1</metric>
+    <metric>share_top01_past_tick_2</metric>
+    <metric>share_top01_past_tick_3</metric>
+    <metric>gini_stop_tick</metric>
+    <metric>gini_past_tick_1</metric>
+    <metric>gini_past_tick_2</metric>
+    <metric>gini_past_tick_3</metric>
+    <metric>tailexp_top10_stop_tick</metric>
+    <metric>tailexp_top10_past_tick_1</metric>
+    <metric>tailexp_top10_past_tick_2</metric>
+    <metric>tailexp_top10_past_tick_3</metric>
+    <metric>tailexp_top5_stop_tick</metric>
+    <metric>tailexp_top5_past_tick_1</metric>
+    <metric>tailexp_top5_past_tick_2</metric>
+    <metric>tailexp_top5_past_tick_3</metric>
+    <metric>tailexp_top1_stop_tick</metric>
+    <metric>tailexp_top1_past_tick_1</metric>
+    <metric>tailexp_top1_past_tick_2</metric>
+    <metric>tailexp_top1_past_tick_3</metric>
+    <metric>volatility_past_tick_1</metric>
+    <metric>volatility_past_tick_2</metric>
+    <metric>volatility_past_tick_3</metric>
+    <metric>stillintop10_past_tick_1</metric>
+    <metric>stillintop10_past_tick_2</metric>
+    <metric>stillintop10_past_tick_3</metric>
+    <metric>stillintop1_past_tick_1</metric>
+    <metric>stillintop1_past_tick_2</metric>
+    <metric>stillintop1_past_tick_3</metric>
+    <metric>stillintop01_past_tick_1</metric>
+    <metric>stillintop01_past_tick_2</metric>
+    <metric>stillintop01_past_tick_3</metric>
+    <metric>growth_rate_all</metric>
+    <metric>growth_rate_past_tick_1</metric>
+    <metric>growth_rate_past_tick_2</metric>
+    <metric>growth_rate_past_tick_3</metric>
+    <enumeratedValueSet variable="past_tick_2">
+      <value value="25"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="mu">
+      <value value="0.02"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="taxrate" first="0" step="0.005" last="0.25"/>
+    <enumeratedValueSet variable="N">
+      <value value="1000"/>
+      <value value="10000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="sigma">
+      <value value="0.3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="past_tick_3">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="tax_regime">
+      <value value="&quot;wealth gains&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="past_tick_1">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="stop_tick">
+      <value value="1000"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="experiment tax wealth more" repetitions="900" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>mean_wealth_stop_tick</metric>
+    <metric>mean_wealth_past_tick_1</metric>
+    <metric>mean_wealth_past_tick_2</metric>
+    <metric>mean_wealth_past_tick_3</metric>
+    <metric>share_top10_stop_tick</metric>
+    <metric>share_top10_past_tick_1</metric>
+    <metric>share_top10_past_tick_2</metric>
+    <metric>share_top10_past_tick_3</metric>
+    <metric>share_top1_stop_tick</metric>
+    <metric>share_top1_past_tick_1</metric>
+    <metric>share_top1_past_tick_2</metric>
+    <metric>share_top1_past_tick_3</metric>
+    <metric>share_top01_stop_tick</metric>
+    <metric>share_top01_past_tick_1</metric>
+    <metric>share_top01_past_tick_2</metric>
+    <metric>share_top01_past_tick_3</metric>
+    <metric>gini_stop_tick</metric>
+    <metric>gini_past_tick_1</metric>
+    <metric>gini_past_tick_2</metric>
+    <metric>gini_past_tick_3</metric>
+    <metric>tailexp_top10_stop_tick</metric>
+    <metric>tailexp_top10_past_tick_1</metric>
+    <metric>tailexp_top10_past_tick_2</metric>
+    <metric>tailexp_top10_past_tick_3</metric>
+    <metric>tailexp_top5_stop_tick</metric>
+    <metric>tailexp_top5_past_tick_1</metric>
+    <metric>tailexp_top5_past_tick_2</metric>
+    <metric>tailexp_top5_past_tick_3</metric>
+    <metric>tailexp_top1_stop_tick</metric>
+    <metric>tailexp_top1_past_tick_1</metric>
+    <metric>tailexp_top1_past_tick_2</metric>
+    <metric>tailexp_top1_past_tick_3</metric>
+    <metric>volatility_past_tick_1</metric>
+    <metric>volatility_past_tick_2</metric>
+    <metric>volatility_past_tick_3</metric>
+    <metric>stillintop10_past_tick_1</metric>
+    <metric>stillintop10_past_tick_2</metric>
+    <metric>stillintop10_past_tick_3</metric>
+    <metric>stillintop1_past_tick_1</metric>
+    <metric>stillintop1_past_tick_2</metric>
+    <metric>stillintop1_past_tick_3</metric>
+    <metric>stillintop01_past_tick_1</metric>
+    <metric>stillintop01_past_tick_2</metric>
+    <metric>stillintop01_past_tick_3</metric>
+    <metric>growth_rate_all</metric>
+    <metric>growth_rate_past_tick_1</metric>
+    <metric>growth_rate_past_tick_2</metric>
+    <metric>growth_rate_past_tick_3</metric>
+    <enumeratedValueSet variable="past_tick_2">
+      <value value="25"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="mu">
+      <value value="0.02"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="taxrate" first="0" step="0.001" last="0.05"/>
+    <enumeratedValueSet variable="N">
+      <value value="1000"/>
+      <value value="10000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="sigma">
+      <value value="0.3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="past_tick_3">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="tax_regime">
+      <value value="&quot;wealth&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="past_tick_1">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="stop_tick">
+      <value value="200"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="experiment tax wealth gains more" repetitions="900" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>mean_wealth_stop_tick</metric>
+    <metric>mean_wealth_past_tick_1</metric>
+    <metric>mean_wealth_past_tick_2</metric>
+    <metric>mean_wealth_past_tick_3</metric>
+    <metric>share_top10_stop_tick</metric>
+    <metric>share_top10_past_tick_1</metric>
+    <metric>share_top10_past_tick_2</metric>
+    <metric>share_top10_past_tick_3</metric>
+    <metric>share_top1_stop_tick</metric>
+    <metric>share_top1_past_tick_1</metric>
+    <metric>share_top1_past_tick_2</metric>
+    <metric>share_top1_past_tick_3</metric>
+    <metric>share_top01_stop_tick</metric>
+    <metric>share_top01_past_tick_1</metric>
+    <metric>share_top01_past_tick_2</metric>
+    <metric>share_top01_past_tick_3</metric>
+    <metric>gini_stop_tick</metric>
+    <metric>gini_past_tick_1</metric>
+    <metric>gini_past_tick_2</metric>
+    <metric>gini_past_tick_3</metric>
+    <metric>tailexp_top10_stop_tick</metric>
+    <metric>tailexp_top10_past_tick_1</metric>
+    <metric>tailexp_top10_past_tick_2</metric>
+    <metric>tailexp_top10_past_tick_3</metric>
+    <metric>tailexp_top5_stop_tick</metric>
+    <metric>tailexp_top5_past_tick_1</metric>
+    <metric>tailexp_top5_past_tick_2</metric>
+    <metric>tailexp_top5_past_tick_3</metric>
+    <metric>tailexp_top1_stop_tick</metric>
+    <metric>tailexp_top1_past_tick_1</metric>
+    <metric>tailexp_top1_past_tick_2</metric>
+    <metric>tailexp_top1_past_tick_3</metric>
+    <metric>volatility_past_tick_1</metric>
+    <metric>volatility_past_tick_2</metric>
+    <metric>volatility_past_tick_3</metric>
+    <metric>stillintop10_past_tick_1</metric>
+    <metric>stillintop10_past_tick_2</metric>
+    <metric>stillintop10_past_tick_3</metric>
+    <metric>stillintop1_past_tick_1</metric>
+    <metric>stillintop1_past_tick_2</metric>
+    <metric>stillintop1_past_tick_3</metric>
+    <metric>stillintop01_past_tick_1</metric>
+    <metric>stillintop01_past_tick_2</metric>
+    <metric>stillintop01_past_tick_3</metric>
+    <metric>growth_rate_all</metric>
+    <metric>growth_rate_past_tick_1</metric>
+    <metric>growth_rate_past_tick_2</metric>
+    <metric>growth_rate_past_tick_3</metric>
+    <enumeratedValueSet variable="past_tick_2">
+      <value value="25"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="mu">
+      <value value="0.02"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="taxrate" first="0" step="0.005" last="0.25"/>
+    <enumeratedValueSet variable="N">
+      <value value="1000"/>
+      <value value="10000"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="sigma">
+      <value value="0.3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="past_tick_3">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="tax_regime">
+      <value value="&quot;wealth gains&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="past_tick_1">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="stop_tick">
+      <value value="200"/>
+    </enumeratedValueSet>
+  </experiment>
 </experiments>
 @#$#@#$#@
 @#$#@#$#@

@@ -117,17 +117,13 @@ to-report gini [w]
 end
 
 to-report tail-exponent-fit [w]
-  let threshold (mean w) * mean_factor_fit ;fit-threshold w ;
+  let threshold fit-threshold w
   set w filter [x -> x > threshold] w
   report 1 + length w / sum map [x -> ln (x / threshold)] w
 end
 
 to-report fit-threshold [w]
-  report ifelse-value (fit_above = "upper quantile_fit") [
-    quantile w (1 - quantile_fit)
-  ][
-    mean w * mean_factor_fit
-  ]
+  report quantile w (1 - quantile_fit)
 end
 
 to-report num-wealth-above-threshold [w]
@@ -172,13 +168,13 @@ to-report fraction_in_fit report num-wealth-above-threshold [wealth] of turtles 
 to-report fraction_above_mean report count turtles with [wealth > mean [wealth] of turtles] / count turtles end
 @#$#@#$#@
 GRAPHICS-WINDOW
-380
-10
-601
-232
+326
+7
+605
+287
 -1
 -1
-6.455
+12.42424242424243
 1
 10
 1
@@ -199,28 +195,28 @@ ticks
 30.0
 
 SLIDER
-11
-261
-231
-294
+8
+272
+318
+306
 taxrate
 taxrate
 0
-0.5
+0.3
 0.02
-0.005
+0.001
 1
 NIL
 HORIZONTAL
 
 SLIDER
-90
-36
-267
-69
+88
+37
+265
+70
 N
 N
-0
+10
 10000
 1000.0
 10
@@ -229,10 +225,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-10
-35
-84
-68
+8
+36
+82
+69
 NIL
 Setup
 NIL
@@ -246,10 +242,10 @@ NIL
 1
 
 BUTTON
-10
-210
-72
-243
+8
+221
+70
+254
 Go
 go
 T
@@ -263,10 +259,10 @@ NIL
 1
 
 PLOT
-832
-10
-1114
-130
+614
+7
+896
+127
 mean wealth
 NIL
 NIL
@@ -281,10 +277,10 @@ PENS
 "mean wealth" 1.0 0 -16777216 true "" "plot mean [wealth] of turtles"
 
 PLOT
-832
-370
-1113
-490
+614
+367
+897
+488
 wealth inequality (Gini)
 NIL
 NIL
@@ -299,10 +295,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot ( 2 * sum (map [ [x y] -> x * y ] \n                 n-values N [ x -> x + 1 ] \n                 sort [wealth] of turtles) )\n      / (N * (sum [wealth] of turtles)) - (N + 1) / N"
 
 MONITOR
-1113
-56
-1262
-101
+896
+52
+1045
+97
 long term growth rate
 longterm_growth_rate
 5
@@ -310,30 +306,30 @@ longterm_growth_rate
 11
 
 TEXTBOX
-10
-10
-303
-31
+8
+7
+298
+32
 Input parameters
 18
 0.0
 1
 
 TEXTBOX
-11
-186
-201
-207
+8
+197
+198
+218
 Taxation and redistribution
 12
 0.0
 1
 
 MONITOR
-1113
-11
-1262
-56
+896
+8
+1045
+53
 mean wealth
 mean [wealth] of turtles
 5
@@ -341,29 +337,29 @@ mean [wealth] of turtles
 11
 
 PLOT
-380
-237
-660
-407
+326
+289
+606
+459
 wealth distribution
 NIL
 NIL
 0.0
 10.0
 -1.0
-0.0
+0.1
 false
 false
 "clear-plot" "if (ticks mod 50 = 0) [clear-plot]"
 PENS
 "default" 1.0 0 -16777216 true "; clear-plot\nset-plot-x-range (floor (min [log wealth 10] of turtles)) (1 + ceiling max [log wealth 10] of turtles)\nset-plot-y-range precision (log (1 - (count turtles - 1) / count turtles) 10) 1 - 0.1 (0)" "let sorted-wealths sort [wealth] of turtles\nplot-pen-up\nplotxy log (item 0 sorted-wealths) 10 (0)\nplot-pen-down\nset-plot-pen-color ticks\nforeach n-values (length sorted-wealths) [i -> i] [id -> plotxy (log (item id sorted-wealths) 10) log (1 - (id) / length sorted-wealths) 10]"
-"mean" 1.0 0 -7500403 true "clear-plot" "if (show_fit_threshold) [\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0 - precision (log N 10) 1\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0\n]\n;if (show_fit_threshold) [\n;  plotxy (log (mean_factor_fit * mean [wealth] of turtles) 10) 0 - precision (log N 10) 1\n;  plotxy (log (mean_factor_fit * mean [wealth] of turtles) 10) 0\n;]\nset-plot-x-range (floor (min [log wealth 10] of turtles)) (1 + ceiling max [log wealth 10] of turtles)\nset-plot-y-range precision (log (1 - (count turtles - 1) / count turtles) 10) 1 - 0.1 (0)\nset-plot-pen-color ticks\n\n"
+"mean" 1.0 0 -7500403 true "clear-plot" "if (show_fit_threshold) [\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0 - precision (log N 10) 1\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0\n]\n;if (show_fit_threshold) [\n;  plotxy (log (mean_factor_fit * mean [wealth] of turtles) 10) 0 - precision (log N 10) 1\n;  plotxy (log (mean_factor_fit * mean [wealth] of turtles) 10) 0\n;]\nset-plot-x-range (floor (min [log wealth 10] of turtles)) (1 + ceiling max [log wealth 10] of turtles)\nset-plot-y-range precision (log (1 - (count turtles - 1) / count turtles) 10) 1 - 0.2 (0)\nset-plot-pen-color ticks\n\n"
 
 PLOT
-665
-237
-825
-357
+1491
+266
+1651
+386
 tail exponent
 NIL
 NIL
@@ -378,10 +374,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "if (ticks > 0) [plot tail-exponent-fit [wealth] of turtles]"
 
 MONITOR
-667
-360
-797
-405
+1480
+392
+1610
+437
 tail exponent (pdf)
 tail_exponent_pdf
 3
@@ -389,10 +385,10 @@ tail_exponent_pdf
 11
 
 MONITOR
-667
-408
-797
-453
+468
+460
+608
+506
 tail exponent (cdf)
 (tail-exponent-fit [wealth] of turtles) - 1
 3
@@ -400,10 +396,10 @@ tail exponent (cdf)
 11
 
 SLIDER
-10
-100
-183
-133
+8
+97
+181
+130
 mu
 mu
 -0.5
@@ -415,10 +411,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-10
-136
-183
-169
+8
+142
+181
+175
 sigma
 sigma
 0
@@ -430,62 +426,52 @@ NIL
 HORIZONTAL
 
 MONITOR
-189
-126
-341
-171
-time average growth rate
+188
+142
+318
+187
+time average growth
 mu - sigma ^ 2 / 2
 5
 1
 11
 
-TEXTBOX
-190
-105
-313
-124
-ensemble growth rate
-10
-0.0
-1
-
 SWITCH
-384
-410
-555
-443
+457
+590
+609
+624
 show_fit_threshold
 show_fit_threshold
-0
+1
 1
 -1000
 
 CHOOSER
-78
-210
-230
-255
+76
+221
+228
+266
 tax_regime
 tax_regime
 "wealth" "wealth gains"
 0
 
 TEXTBOX
-13
-79
-288
-108
+12
+76
+287
+94
 Wealth: Random mutliplicative growth
 12
 0.0
 1
 
 MONITOR
-1116
-384
-1186
-429
+896
+368
+966
+413
 Gini
 gini_all
 5
@@ -493,10 +479,10 @@ gini_all
 11
 
 PLOT
-832
-490
-1113
-626
+614
+487
+897
+624
 wealth shares
 NIL
 NIL
@@ -513,10 +499,10 @@ PENS
 "Top" 1.0 0 -2674135 true "" "plot max [wealth] of turtles / sum [wealth] of turtles"
 
 MONITOR
-1113
-490
-1178
-535
+896
+488
+961
+533
 Top 10%
 share_top_10
 3
@@ -524,10 +510,10 @@ share_top_10
 11
 
 MONITOR
-1113
-535
-1179
-580
+896
+533
+962
+578
 Top 1%
 share_top_1
 3
@@ -535,36 +521,21 @@ share_top_1
 11
 
 MONITOR
-1113
-580
-1179
-625
+896
+578
+962
+623
 Top
 share_top
 3
 1
 11
 
-SLIDER
-385
-447
-524
-480
-mean_factor_fit
-mean_factor_fit
-1
-5
-1.0
-0.1
-1
-NIL
-HORIZONTAL
-
 MONITOR
-729
-455
-786
-500
+384
+493
+441
+538
 # in fit
 num-wealth-above-threshold [wealth] of turtles
 17
@@ -572,10 +543,10 @@ num-wealth-above-threshold [wealth] of turtles
 11
 
 MONITOR
-669
-455
-726
-500
+327
+493
+384
+538
 in fit
 fraction_in_fit
 3
@@ -583,20 +554,20 @@ fraction_in_fit
 11
 
 CHOOSER
-11
-365
-200
-410
+1480
+497
+1669
+542
 distribution_shocks
 distribution_shocks
 "normal" "double exponential"
 0
 
 MONITOR
-524
-447
-628
-492
+1498
+7
+1602
+52
 mean log wealth
 mean [log wealth 10] of turtles
 3
@@ -604,10 +575,10 @@ mean [log wealth 10] of turtles
 11
 
 MONITOR
-1117
-338
-1265
-383
+896
+280
+1044
+325
 sd last log changes
 sd_log_changes
 5
@@ -615,10 +586,10 @@ sd_log_changes
 11
 
 PLOT
-832
-250
-1114
-370
+614
+247
+896
+367
 volatity (sd log changes)
 NIL
 NIL
@@ -633,25 +604,25 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot standard-deviation log_changes"
 
 SLIDER
-1114
-259
-1287
-292
+896
+247
+1044
+281
 volatility_interval
 volatility_interval
 10
-100
-50.0
+50
+25.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-832
-130
-1114
-250
+614
+127
+896
+247
 log change
 NIL
 NIL
@@ -667,10 +638,10 @@ PENS
 "zero" 1.0 0 -7500403 true "" "plot 0"
 
 INPUTBOX
-306
-207
-370
-267
+1053
+8
+1133
+73
 stop_tick
 200.0
 1
@@ -678,10 +649,10 @@ stop_tick
 Number
 
 SLIDER
-404
-562
-536
-595
+1498
+73
+1630
+106
 mobility_interval
 mobility_interval
 0
@@ -693,10 +664,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-430
-622
-536
-667
+1524
+133
+1630
+178
 stay in Top 10%
 stay_in_top_10
 3
@@ -704,57 +675,36 @@ stay_in_top_10
 11
 
 SLIDER
-386
-481
-526
-514
+327
+460
+467
+493
 quantile_fit
 quantile_fit
-0.001
-0.2
 0.01
-0.001
+0.1
+0.1
+0.01
 1
 NIL
 HORIZONTAL
 
-CHOOSER
-240
-458
-386
-503
-fit_above
-fit_above
-"mean times mean_factor_fit" "upper quantile_fit"
-1
-
 MONITOR
-637
-517
-719
-562
+327
+539
+409
+584
 frac > mean
 fraction_above_mean
 3
 1
 11
 
-SWITCH
-617
-94
-779
-127
-visualize_world
-visualize_world
-1
-1
--1000
-
 BUTTON
-25
-510
-220
-543
+1483
+452
+1678
+485
 profiler
 profiler:start\nsetup\nrepeat 20 [go]\nprofiler:stop                                  ;; stop profiling\ncsv:to-file \"profiler_data3.csv\" profiler:data  ;; save the results\nprofiler:reset    
 NIL
@@ -766,6 +716,61 @@ NIL
 NIL
 NIL
 1
+
+MONITOR
+188
+97
+318
+142
+ensemble growth
+exp mu - 1
+5
+1
+11
+
+INPUTBOX
+1053
+73
+1133
+138
+past_tick_1
+50.0
+1
+0
+Number
+
+INPUTBOX
+1053
+138
+1133
+203
+past_tick_2
+25.0
+1
+0
+Number
+
+INPUTBOX
+1053
+203
+1133
+268
+past_tick_3
+10.0
+1
+0
+Number
+
+SWITCH
+326
+590
+458
+624
+visualize_world
+visualize_world
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
