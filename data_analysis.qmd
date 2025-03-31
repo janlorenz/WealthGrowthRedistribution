@@ -1,0 +1,247 @@
+---
+title: "Figures for WealthRedistribution Simulation Analysis"
+format: 
+  html: 
+    embed-resources: true
+    
+    code-fold: true
+ # format:
+#   pdf:
+#     keep-tex: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+#| include: false
+library(tidyverse)
+library(marquee)
+library(arrow)
+d <- read_parquet("simdata/WealthGrowthRedistribution_StrippedDown experiments all.parquet") |> 
+ mutate(Ns = format(N, scientific = FALSE, big.mark = ","),
+        `Tax Regime` = if_else(tax_regime == "wealth", "Wealth Tax", "Wealth Gains Tax"),
+        # taxrate_wealth_scaled = if_else(tax_regime == "wealth", 7.5*taxrate, taxrate))
+        taxrate_wealth_scaled_75 = if_else(tax_regime == "wealth gains", taxrate/7.5, taxrate),
+        taxrate_wealth_scaled_60 = if_else(tax_regime == "wealth gains", taxrate/5.5 - 0.005, taxrate),
+        across(starts_with("tailexp"), \(x) x -1))
+tax_regimes <- unique(d$`Tax Regime`)
+N <- unique(d$N) |> sort()
+Nss <- unique(d$Ns)
+
+d$stop_tick |> table()
+```
+
+## Data description
+
+The simulation dataset has data from `r format(nrow(d), big.mark=",")` simulatiofvn runs. Simulations iterate over `r length(tax_regimes)` tax regimes (`r paste0('"', tax_regimes, '"', collapse = '; ')`), `r length(N)` numbers of entrepreneurs (`r paste0(format(N, big.mark = ",", scientific = FALSE), collapse = '; ')`), and tax rates $\{0,\stackrel{+0.001}{\dots},0.05\}$ for "Wealth Tax" and  $\{0,\stackrel{+0.005}{\dots},0.2\}$ for "Wealth Gains Tax" both with 51 values. This amounts to $`r length(tax_regimes)` \times `r length(N)` \times 51 = `r length(tax_regimes)*length(N)*51`$ parameter configurations. For each configuration we ran 100 simulation. 
+
+These parameters are fixed for each simulation: $\mu = 0.02$ and $\sigma = 0.3$ as parameters of the $\log$-normal distribution of the random yearly growth rates. This implies an expected growth rate of $\exp(\mu) = `r round(exp(0.02), digits = 5)`$. 
+
+
+## Examples of a trajectories over time (TODO!)
+
+Parameters: 
+
+Tax rate for "Wealth Tax": 1.5%
+
+![](img/wealth15.png)
+
+
+Tax rate for "Wealth Gains Tax": 11%
+
+![](img/wealthgains11.png)
+
+Calibrate tax rate for both regimes close to empirically most fitting outcome measures, see below. 
+
+## Characteristics of the wealth distribution
+
+Tail exponent by population size. Tail exponents are for the upper tail of the inverse cumulative distribution function (icdf). 
+
+```{r}
+# d |> filter(stop_tick == 200) |> 
+#  ggplot(aes(taxrate, tailexp_top10_stop_tick)) +
+#  geom_point(alpha = 0.2) +
+#  geom_smooth() +
+#  facet_grid(tax_regime ~ N)
+
+d |> summarize(mean_tailexp_top10_stop_tick = mean(tailexp_top10_stop_tick), 
+               .by = c(tax_regime, taxrate, Ns)) |> 
+ ggplot(aes(taxrate, mean_tailexp_top10_stop_tick, color = Ns)) + 
+ geom_line() +
+ facet_wrap(~tax_regime, scales = "free_x")
+```
+
+Tail exponent with scaled wealth gains tax rate (divisor 7.5) and different fit for top 10% and top 1% (more noisy). 
+
+```{r}
+d |> filter(N == 10000, stop_tick == 200) |> 
+ summarize(mean_tailexp_top10_stop_tick = mean(tailexp_top10_stop_tick), 
+           mean_tailexp_top1_stop_tick = mean(tailexp_top1_stop_tick), 
+           .by = c(tax_regime, taxrate_wealth_scaled_75, Ns)) |> 
+ pivot_longer(c(mean_tailexp_top10_stop_tick,
+            mean_tailexp_top1_stop_tick)) |> 
+ ggplot(aes(taxrate_wealth_scaled_75, value,
+            color = tax_regime, linetype = name)) + 
+ geom_line() +
+ labs(caption = "wealth scaled scales wealth gains tax rates down by divisor 7.5, top1 and top10 fit the tail exponent on the top 1% or top 10%")
+```
+
+
+## Linear Relationship wealth tax and wealth gains tax (1)
+
+More outcome measures for wealth gains scaled down by 7.5 and also for runs with 200 and 1000 ticks. 
+
+This linear scale fits well for low tax rates!
+
+```{r}
+#| fig-width: 11
+#| fig-height: 8
+
+d |> filter(N == 10000) |> 
+ summarize(median_growth_rate_all = mean(growth_rate_all),
+           median_tailexp_top10_stop_tick = mean(tailexp_top10_stop_tick),
+           median_tailexp_top1_stop_tick = mean(tailexp_top1_stop_tick),
+           median_gini_stop_tick = mean(gini_stop_tick),
+           median_share_top10_stop_tick = mean(share_top10_stop_tick),
+           median_share_top1_stop_tick = mean(share_top1_stop_tick),
+           .by = c(tax_regime, taxrate_wealth_scaled_75, taxrate, Ns, stop_tick)) |> 
+ pivot_longer(c(median_growth_rate_all,
+                median_tailexp_top10_stop_tick,
+                median_tailexp_top1_stop_tick, 
+                median_gini_stop_tick,
+                median_share_top10_stop_tick, 
+                median_share_top1_stop_tick)) |> 
+ ggplot(aes(taxrate_wealth_scaled_75, value, color = factor(stop_tick), linetype = tax_regime)) + 
+ geom_line() +
+  facet_wrap(~name, nrow=2, scales = "free_y") +
+   scale_x_continuous(labels = ~paste0("{.red ",100*.,"%}/{.blue ",100*.*7.5,"%}"),
+                     name = "{.red Tax rate wealth}/{.blue Tax rate wealth gains}") +
+ labs(caption = "Scaling factor wealth gains tax:\nmultiply wealth tax by 7.5") +
+ theme(axis.title.x = element_marquee(), axis.text.x = element_marquee())
+```
+
+
+
+## Linear Relationship wealth tax and wealth gains tax (1)
+
+More outcome measures for wealth gains shifted by 0.005 and scaled down by 5.5 (also for runs with 200 and 1000 ticks). 
+
+This linear scale fits well for higher tax rates!
+
+```{r}
+#| fig-width: 11
+#| fig-height: 8
+
+d |> filter(N == 10000) |> 
+ summarize(median_growth_rate_all = mean(growth_rate_all),
+           median_tailexp_top10_stop_tick = mean(tailexp_top10_stop_tick),
+           median_tailexp_top1_stop_tick = mean(tailexp_top1_stop_tick),
+           median_gini_stop_tick = mean(gini_stop_tick),
+           median_share_top10_stop_tick = mean(share_top10_stop_tick),
+           median_share_top1_stop_tick = mean(share_top1_stop_tick),
+           .by = c(tax_regime, taxrate_wealth_scaled_60, taxrate, Ns, stop_tick)) |> 
+ pivot_longer(c(median_growth_rate_all,
+                median_tailexp_top10_stop_tick,
+                median_tailexp_top1_stop_tick, 
+                median_gini_stop_tick,
+                median_share_top10_stop_tick, 
+                median_share_top1_stop_tick)) |> 
+ ggplot(aes(taxrate_wealth_scaled_60, value, color = factor(stop_tick), linetype = tax_regime)) + 
+ geom_line() +
+  facet_wrap(~name, nrow=2, scales = "free_y") +
+   scale_x_continuous(labels = ~paste0("{.red ",100*.,"%}/{.blue ",100*(.+0.005)*5.5,"%}"),
+                     name = "{.red Tax rate wealth}/{.blue Tax rate wealth gains}") +
+ labs(caption = "Shift-scaling wealth gains tax:\nmultiply (wealth tax + 0.5%) by 5.5") +
+ theme(axis.title.x = element_marquee(), axis.text.x = element_marquee())
+```
+
+
+
+## A baseline case
+
+First proposal: 
+
+Wealth tax 1.5% (see one run above). 
+
+```{r}
+d |> filter(tax_regime == "wealth", taxrate == 0.015) |> 
+ summarize(Gini = mean(gini_stop_tick), `Tail exponent` = mean(tailexp_top10_stop_tick),
+           `Share Top 10%` = mean(share_top10_stop_tick), 
+            `Share Top 1%` = mean(share_top1_stop_tick)) |> 
+ mutate(across(everything(),\(x) round(x, digits = 3))) |> 
+ knitr::kable()
+```
+
+Wealth gains tax 11% (see one run above).
+
+```{r}
+d |> filter(tax_regime == "wealth gains", taxrate == 0.11) |> 
+ summarize(Gini = mean(gini_stop_tick), `Tail exponent` = mean(tailexp_top10_stop_tick),
+           `Share Top 10%` = mean(share_top10_stop_tick), 
+            `Share Top 1%` = mean(share_top1_stop_tick)) |> 
+ mutate(across(everything(),\(x) round(x, digits = 3))) |> 
+ knitr::kable()
+```
+
+Both of these tax rates lead to very similar outcomes. Interestingly, these tax rates also match the point where the loss regime of multiplicative growth regime vanishes (for higher tax rates). Probably this is also the point where the power law tail and the travelling wave form really stabilizes. For tax rates much lower it shows still some log-normal like behavior with unstable (growing variance) and fitted power law exponents below 1. 
+
+So, for these tax rates both of out shift-scale relations fit:
+
+Scale fit for low tax rates:  
+wealth tax 1.5% $\to$ 1.5% times 7.5 = 11.25% wealth gains tax
+
+Shift-scale fit for high tax rates:  
+wealth tax 1.5% $\to$ (1.5% + 0.5%) times 5.5 = 11% wealth gains tax
+
+
+
+## Gatsby Curve
+
+```{r}
+d |> filter(tax_regime == "wealth", taxrate > 0) |> 
+ ggplot(aes(gini_stop_tick, stillintop10_past_tick_3, color = taxrate)) +
+ geom_point(alpha = 0.1) + 
+ geom_smooth(method = "lm") +
+ labs(caption = "wealth tax regime, time lag 10")
+```
+
+```{r}
+d |> filter(tax_regime == "wealth gains", taxrate > 0) |> 
+ ggplot(aes(gini_stop_tick, stillintop10_past_tick_3, color = taxrate)) +
+ geom_point(alpha = 0.1) + 
+ geom_smooth(method = "lm") +
+ labs(caption = "wealth gains tax regime, time lag 10")
+```
+
+```{r}
+d |> filter(taxrate > 0) |> 
+ ggplot(aes(gini_stop_tick, stillintop10_past_tick_3, color = tax_regime)) +
+ geom_smooth(method = "lm") +
+ labs(caption = "time lag 10")
+```
+
+
+
+```{r}
+d |> filter(taxrate > 0) |>
+ pivot_longer(c(stillintop10_past_tick_3, 
+              stillintop10_past_tick_2, 
+              stillintop10_past_tick_1)) |> 
+ ggplot(aes(gini_stop_tick, value, 
+            color = tax_regime, linetype = name)) +
+ geom_smooth(method = "lm") +
+ labs(caption = "time lags: past_tick_1 = 50, past_tick_2 = 25, past_tick_3 = 10,")
+```
+
+
+```{r}
+d |> filter(taxrate > 0) |>
+ pivot_longer(c(stillintop1_past_tick_3, 
+              stillintop1_past_tick_2, 
+              stillintop1_past_tick_1)) |> 
+ ggplot(aes(gini_stop_tick, value, 
+            color = tax_regime, linetype = name)) +
+ geom_smooth(method = "lm") +
+ labs(caption = "time lags: past_tick_1 = 50, past_tick_2 = 25, past_tick_3 = 10,")
+```
+

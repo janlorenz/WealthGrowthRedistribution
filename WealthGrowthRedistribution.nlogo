@@ -203,7 +203,7 @@ taxrate
 taxrate
 0
 0.3
-0.02
+0.015
 0.001
 1
 NIL
@@ -218,7 +218,7 @@ N
 N
 10
 10000
-1000.0
+10000.0
 10
 1
 NIL
@@ -350,16 +350,16 @@ NIL
 0.1
 false
 false
-"clear-plot" "if (ticks mod 50 = 0) [clear-plot]"
+"clear-plot" "if (ticks mod 201 = 0) [clear-plot]"
 PENS
 "default" 1.0 0 -16777216 true "; clear-plot\nset-plot-x-range (floor (min [log wealth 10] of turtles)) (1 + ceiling max [log wealth 10] of turtles)\nset-plot-y-range precision (log (1 - (count turtles - 1) / count turtles) 10) 1 - 0.1 (0)" "let sorted-wealths sort [wealth] of turtles\nplot-pen-up\nplotxy log (item 0 sorted-wealths) 10 (0)\nplot-pen-down\nset-plot-pen-color ticks\nforeach n-values (length sorted-wealths) [i -> i] [id -> plotxy (log (item id sorted-wealths) 10) log (1 - (id) / length sorted-wealths) 10]"
-"mean" 1.0 0 -7500403 true "clear-plot" "if (show_fit_threshold) [\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0 - precision (log N 10) 1\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0\n]\n;if (show_fit_threshold) [\n;  plotxy (log (mean_factor_fit * mean [wealth] of turtles) 10) 0 - precision (log N 10) 1\n;  plotxy (log (mean_factor_fit * mean [wealth] of turtles) 10) 0\n;]\nset-plot-x-range (floor (min [log wealth 10] of turtles)) (1 + ceiling max [log wealth 10] of turtles)\nset-plot-y-range precision (log (1 - (count turtles - 1) / count turtles) 10) 1 - 0.2 (0)\nset-plot-pen-color ticks\n\n"
+"mean" 1.0 0 -7500403 true "clear-plot" "if (show_fit_threshold and ticks = 200) [\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0 - precision (log N 10) 1\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0\n]\n;if (show_fit_threshold) [\n;  plotxy (log (mean_factor_fit * mean [wealth] of turtles) 10) 0 - precision (log N 10) 1\n;  plotxy (log (mean_factor_fit * mean [wealth] of turtles) 10) 0\n;]\nset-plot-x-range (floor (min [log wealth 10] of turtles)) (1 + ceiling max [log wealth 10] of turtles)\nset-plot-y-range precision (log (1 - (count turtles - 1) / count turtles) 10) 1 - 0.2 (0)\nset-plot-pen-color ticks\n\n"
 
 PLOT
-1270
-265
-1430
-385
+450
+505
+610
+625
 tail exponent
 NIL
 NIL
@@ -374,10 +374,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "if (ticks > 0) [plot tail-exponent-fit [wealth] of turtles]"
 
 MONITOR
-1259
-391
-1389
-436
+1138
+392
+1268
+437
 tail exponent (pdf)
 tail_exponent_pdf
 3
@@ -437,13 +437,13 @@ mu - sigma ^ 2 / 2
 11
 
 SWITCH
-457
-590
-609
-623
+325
+665
+477
+698
 show_fit_threshold
 show_fit_threshold
-1
+0
 1
 -1000
 
@@ -501,7 +501,7 @@ PENS
 MONITOR
 896
 488
-961
+956
 533
 Top 10%
 share_top_10
@@ -512,7 +512,7 @@ share_top_10
 MONITOR
 896
 533
-962
+956
 578
 Top 1%
 share_top_1
@@ -523,7 +523,7 @@ share_top_1
 MONITOR
 896
 578
-962
+956
 623
 Top
 share_top
@@ -554,20 +554,20 @@ fraction_in_fit
 11
 
 CHOOSER
-1259
-496
-1448
-541
+1138
+497
+1327
+542
 distribution_shocks
 distribution_shocks
 "normal" "double exponential"
 0
 
 MONITOR
-1277
-6
-1381
-51
+1156
+7
+1260
+52
 mean log wealth
 mean [log wealth 10] of turtles
 3
@@ -649,25 +649,25 @@ stop_tick
 Number
 
 SLIDER
-1277
-72
-1409
-105
+1156
+73
+1288
+106
 mobility_interval
 mobility_interval
 0
 50
-20.0
+10.0
 1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1303
-132
-1409
-177
+1156
+110
+1262
+155
 stay in Top 10%
 stay_in_top_10
 3
@@ -701,10 +701,10 @@ fraction_above_mean
 11
 
 BUTTON
-1262
-451
-1457
-484
+1141
+452
+1336
+485
 profiler
 profiler:start\nsetup\nrepeat 20 [go]\nprofiler:stop                                  ;; stop profiling\ncsv:to-file \"profiler_data3.csv\" profiler:data  ;; save the results\nprofiler:reset    
 NIL
@@ -762,10 +762,10 @@ past_tick_3
 Number
 
 SWITCH
-326
-590
-458
-623
+325
+630
+457
+663
 visualize_world
 visualize_world
 0
