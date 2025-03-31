@@ -168,13 +168,13 @@ to-report fraction_in_fit report num-wealth-above-threshold [wealth] of turtles 
 to-report fraction_above_mean report count turtles with [wealth > mean [wealth] of turtles] / count turtles end
 @#$#@#$#@
 GRAPHICS-WINDOW
-326
-7
-605
-287
+325
+10
+598
+284
 -1
 -1
-12.42424242424243
+8.030303030303031
 1
 10
 1
@@ -198,7 +198,7 @@ SLIDER
 8
 272
 318
-306
+305
 taxrate
 taxrate
 0
@@ -356,10 +356,10 @@ PENS
 "mean" 1.0 0 -7500403 true "clear-plot" "if (show_fit_threshold) [\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0 - precision (log N 10) 1\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0\n]\n;if (show_fit_threshold) [\n;  plotxy (log (mean_factor_fit * mean [wealth] of turtles) 10) 0 - precision (log N 10) 1\n;  plotxy (log (mean_factor_fit * mean [wealth] of turtles) 10) 0\n;]\nset-plot-x-range (floor (min [log wealth 10] of turtles)) (1 + ceiling max [log wealth 10] of turtles)\nset-plot-y-range precision (log (1 - (count turtles - 1) / count turtles) 10) 1 - 0.2 (0)\nset-plot-pen-color ticks\n\n"
 
 PLOT
-1491
-266
-1651
-386
+1270
+265
+1430
+385
 tail exponent
 NIL
 NIL
@@ -374,10 +374,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "if (ticks > 0) [plot tail-exponent-fit [wealth] of turtles]"
 
 MONITOR
-1480
-392
-1610
-437
+1259
+391
+1389
+436
 tail exponent (pdf)
 tail_exponent_pdf
 3
@@ -388,7 +388,7 @@ MONITOR
 468
 460
 608
-506
+505
 tail exponent (cdf)
 (tail-exponent-fit [wealth] of turtles) - 1
 3
@@ -440,7 +440,7 @@ SWITCH
 457
 590
 609
-624
+623
 show_fit_threshold
 show_fit_threshold
 1
@@ -554,20 +554,20 @@ fraction_in_fit
 11
 
 CHOOSER
-1480
-497
-1669
-542
+1259
+496
+1448
+541
 distribution_shocks
 distribution_shocks
 "normal" "double exponential"
 0
 
 MONITOR
-1498
-7
-1602
-52
+1277
+6
+1381
+51
 mean log wealth
 mean [log wealth 10] of turtles
 3
@@ -607,7 +607,7 @@ SLIDER
 896
 247
 1044
-281
+280
 volatility_interval
 volatility_interval
 10
@@ -649,10 +649,10 @@ stop_tick
 Number
 
 SLIDER
-1498
-73
-1630
-106
+1277
+72
+1409
+105
 mobility_interval
 mobility_interval
 0
@@ -664,10 +664,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-1524
-133
-1630
-178
+1303
+132
+1409
+177
 stay in Top 10%
 stay_in_top_10
 3
@@ -701,10 +701,10 @@ fraction_above_mean
 11
 
 BUTTON
-1483
-452
-1678
-485
+1262
+451
+1457
+484
 profiler
 profiler:start\nsetup\nrepeat 20 [go]\nprofiler:stop                                  ;; stop profiling\ncsv:to-file \"profiler_data3.csv\" profiler:data  ;; save the results\nprofiler:reset    
 NIL
@@ -765,10 +765,10 @@ SWITCH
 326
 590
 458
-624
+623
 visualize_world
 visualize_world
-1
+0
 1
 -1000
 
