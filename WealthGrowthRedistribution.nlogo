@@ -1,6 +1,11 @@
 extensions [profiler csv]
 globals [log_changes old_mean_wealth]
-turtles-own [wealth wealth_return tax decile_group percentile_group]
+turtles-own [wealth
+             wealth_return
+             tax
+             wealth_on_acquisition
+             decile_group
+             percentile_group]
 
 to setup
   clear-all
@@ -8,15 +13,16 @@ to setup
   create-turtles N [
     initialize
   ]
-  set log_changes (list 0 0)
+  set log_changes []
   visualize
   reset-ticks
 end
 
 to initialize
-  setxy random-xcor random-ycor
+  ; setxy random-xcor random-ycor
   set shape "face happy"
   set wealth 1
+  set wealth_on_acquisition wealth
   set decile_group (list)
   set percentile_group (list)
 end
@@ -27,7 +33,7 @@ to go
   turtles_tax
   turtles_new_wealth
   set log_changes fput (ln mean [ wealth ] of turtles - ln old_mean_wealth) log_changes
-  while [length log_changes > volatility_interval] [set log_changes butlast log_changes]
+  ; while [length log_changes > volatility_interval] [set log_changes butlast log_changes]
   ;turtles_quantile_groups
   visualize
   tick
@@ -42,12 +48,22 @@ end
 
 to turtles_tax
   ask turtles [
-    ifelse (tax_regime = "wealth") [
-      set tax (wealth + wealth_return) * taxrate
-    ] [
-      set tax (max list (wealth_return) 0) * taxrate
-    ]
+    (ifelse
+      (tax_regime = "wealth") [
+        set tax (wealth + wealth_return) * taxrate
+      ]
+      (tax_regime = "wealth gains") [
+        set tax (max list (wealth_return) 0) * taxrate
+      ]
+      (tax_regime = "realized wealth gains") [
+        set tax ifelse-value (wealth + wealth_return >= wealth_gains_realization_scale * wealth_on_acquisition)
+          [(wealth + wealth_return - wealth_on_acquisition) * taxrate]
+          [0]
+      ]
+      [set tax 0]
+    )
   ]
+  ; wealth_gains_realization_scale
 end
 
 to turtles_new_wealth
@@ -56,6 +72,11 @@ to turtles_new_wealth
   let sd_log_wealth standard-deviation [log wealth 10] of turtles
   ask turtles [
     set wealth (wealth + wealth_return - tax + tax_revenue / count turtles)
+  ]
+  ask turtles [
+    if (tax_regime = "realized wealth gains") [
+      set wealth_on_acquisition wealth
+    ]
   ]
 end
 
@@ -159,13 +180,17 @@ end
 to-report tail_exponent_pdf report tail-exponent-fit [wealth] of turtles end
 to-report stay_in_top_10 report transition_prob_decile 10 10 end
 to-report longterm_growth_rate report exp ((ln mean [wealth] of turtles) / ticks) end
-to-report sd_log_changes report standard-deviation log_changes end
+to-report sd_log_changes report standard-deviation sublist log_changes 0 min (list volatility_interval length log_changes) end
 to-report gini_all report gini [wealth] of turtles end
 to-report share_top_10 report wealth-fraction-top [wealth] of turtles 0.1 end
 to-report share_top_1 report wealth-fraction-top [wealth] of turtles 0.01 end
 to-report share_top report max [wealth] of turtles / sum [wealth] of turtles end
 to-report fraction_in_fit report num-wealth-above-threshold [wealth] of turtles / count turtles end
 to-report fraction_above_mean report count turtles with [wealth > mean [wealth] of turtles] / count turtles end
+
+to-report normal-pdf [x m s]
+  report (1 / (s * sqrt (2 * pi))) * exp (-0.5 * ((x - m) / s) ^ 2)
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 325
@@ -203,7 +228,7 @@ taxrate
 taxrate
 0
 0.3
-0.015
+0.15
 0.001
 1
 NIL
@@ -218,7 +243,7 @@ N
 N
 10
 10000
-10000.0
+3000.0
 10
 1
 NIL
@@ -450,12 +475,12 @@ show_fit_threshold
 CHOOSER
 76
 221
-228
+261
 266
 tax_regime
 tax_regime
-"wealth" "wealth gains"
-0
+"wealth" "wealth gains" "realized wealth gains"
+2
 
 TEXTBOX
 12
@@ -601,7 +626,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot standard-deviation log_changes"
+"default" 1.0 0 -16777216 true "" "plot sd_log_changes"
 
 SLIDER
 896
@@ -612,7 +637,7 @@ volatility_interval
 volatility_interval
 10
 50
-25.0
+50.0
 1
 1
 NIL
@@ -764,13 +789,65 @@ Number
 SWITCH
 325
 630
-457
+481
 663
 visualize_world
 visualize_world
-0
+1
 1
 -1000
+
+PLOT
+1626
+9
+1971
+719
+log changes distribution
+NIL
+NIL
+-0.5
+0.5
+0.0
+10.0
+true
+false
+"" "clear-plot"
+PENS
+"default" 0.01 1 -16777216 true "" "histogram log_changes"
+"pen-1" 1.0 0 -8630108 true "" "let num-points 100 ; Adjust for smoother/faster plots\nlet x-step (plot-x-max - plot-x-min) / num-points\nlet x-values (range plot-x-min (plot-x-max) x-step)\nforeach x-values [x ->\n  plotxy x length log_changes * x-step * normal-pdf x mean log_changes standard-deviation log_changes\n]"
+
+PLOT
+1356
+259
+1616
+464
+inverse cdf abs log changes
+NIL
+logarithmized
+0.0
+0.5
+0.0
+-3.0
+true
+false
+"" ""
+PENS
+"default" 0.01 0 -16777216 true "" "clear-plot\nlet sorted_abs_log_changes sort map [x -> abs x] log_changes\nplot-pen-up\nplotxy log (item 0 sorted_abs_log_changes) 10 (0)\nplot-pen-down\nforeach n-values (length sorted_abs_log_changes) [i -> i] [id -> plotxy ((item id sorted_abs_log_changes)) log (1 - (id) / length sorted_abs_log_changes) 10]"
+
+SLIDER
+9
+310
+257
+343
+wealth_gains_realization_scale
+wealth_gains_realization_scale
+1
+10
+1.5
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
