@@ -1,14 +1,18 @@
-extensions [profiler csv]
 globals [tax_revenue
-         total_wealth
+         taxshare
+         fraction_paying_tax
          log_changes
          old_mean_wealth]
 turtles-own [wealth
              wealth_return
              tax
+             tax_wealth_gains
              wealth_on_acquisition
-             decile_group
-             percentile_group]
+             inbottom50
+             in50to90
+             intop10
+             intop1
+             intop01]
 
 to setup
   clear-all
@@ -16,113 +20,122 @@ to setup
   create-turtles N [
     initialize
   ]
-  set log_changes []
+  set old_mean_wealth mean [wealth] of turtles
+  set log_changes (list)
   visualize
   reset-ticks
 end
 
 to initialize
-  ; setxy random-xcor random-ycor
+  if visualize_world [setxy random-xcor random-ycor]
   set shape "face happy"
   set wealth 1
   set wealth_on_acquisition wealth
-  set decile_group (list)
-  set percentile_group (list)
+  set inbottom50 (list)
+  set in50to90 (list)
+  set intop10 (list)
+  set intop1 (list)
+  set intop01 (list)
 end
 
 to go
-  set old_mean_wealth mean [ wealth ] of turtles
   turtles_wealth_returns
   turtles_tax
   turtles_new_wealth
-  set log_changes fput (ln mean [ wealth ] of turtles - ln old_mean_wealth) log_changes
-  ; while [length log_changes > volatility_interval] [set log_changes butlast log_changes]
-  ;turtles_quantile_groups
+  update_data
   visualize
   tick
   if (ticks = stop_tick) [stop]
 end
 
 to turtles_wealth_returns
-  ask turtles [
-    set wealth_return wealth * ((random-growth-factor mu sigma) - 1)
-  ]
+  ask turtles [ set wealth_return wealth * ((random-growth-factor mu sigma) - 1) ]
 end
 
 to turtles_tax
   ask turtles [
-    (ifelse
-      (tax_regime = "wealth") [
-        set tax (wealth + wealth_return) * taxrate
-      ]
-      (tax_regime = "wealth gains") [
-        set tax (max list (wealth_return) 0) * taxrate
-      ]
-      (tax_regime = "realized wealth gains") [
-        set tax ifelse-value (wealth + wealth_return >= wealth_gains_realization_scale * wealth_on_acquisition)
-          [(wealth + wealth_return - wealth_on_acquisition) * taxrate]
-          [0]
-      ]
-      [set tax 0]
+    set tax (ifelse-value
+    (tax_regime = "wealth")
+      [(wealth + wealth_return) * taxrate]
+    (tax_regime = "wealth gains")
+      [(max list (wealth_return) 0) * taxrate]
+    (tax_regime = "realized wealth gains" and wealth + wealth_return >= realization_scale * wealth_on_acquisition)
+      [(wealth + wealth_return - wealth_on_acquisition) * taxrate]
+      [0]
     )
+    set tax_wealth_gains (max list (wealth_return) 0) * taxrate
   ]
-  ; wealth_gains_realization_scale
 end
+;to turtles_tax
+;  ask turtles [
+;    (ifelse
+;      (tax_regime = "wealth") [
+;        set tax (wealth + wealth_return) * taxrate
+;      ]
+;      (tax_regime = "wealth gains") [
+;        set tax (max list (wealth_return) 0) * taxrate
+;      ]
+;      (tax_regime = "realized wealth gains") [
+;        set tax ifelse-value (wealth + wealth_return >= wealth_gains_realization_scale * wealth_on_acquisition)
+;          [(wealth + wealth_return - wealth_on_acquisition) * taxrate]
+;          [0]
+;      ]
+;      [set tax 0]
+;    )
+;  ]
+;end
 
 to turtles_new_wealth
-  set total_wealth sum [wealth] of turtles
   set tax_revenue sum [tax] of turtles
-  let mean_log_wealth mean [log wealth 10] of turtles
-  let sd_log_wealth standard-deviation [log wealth 10] of turtles
   ask turtles [
     set wealth (wealth + wealth_return - tax + tax_revenue / count turtles)
   ]
   ask turtles [
-    if (tax_regime = "realized wealth gains") [
+    if (tax_regime = "realized wealth gains" and tax > 0) [
       set wealth_on_acquisition wealth
     ]
   ]
 end
 
-to turtles_quantile_groups
-  let sorted-turtles sort-on [wealth] turtles
-  let ranks n-values length sorted-turtles [x -> x + 1]
-  (foreach sorted-turtles ranks [[the-turtle r] ->
-    ask the-turtle [
-      set decile_group fput ceiling (10 * r / count turtles) decile_group
-      while [length decile_group > mobility_interval] [set decile_group butlast decile_group]
-      set percentile_group fput ceiling (100 * r / count turtles) percentile_group
-      while [length percentile_group > mobility_interval] [set percentile_group butlast percentile_group]
-  ]])
+to update_data
+  set taxshare tax_revenue / sum [wealth] of turtles
+  set fraction_paying_tax count turtles with [tax > 0] / count turtles
+  set log_changes fput (ln mean [ wealth ] of turtles - ln old_mean_wealth) log_changes
+  set old_mean_wealth mean [ wealth ] of turtles
+  let sorted-wealth reverse sort [wealth] of turtles
+  ask turtles [
+    let quantile_top50 item round (0.5 * count turtles) sorted-wealth
+    let quantile_top10 item round (0.1 * count turtles) sorted-wealth
+    let quantile_top1 item round (0.01 * count turtles) sorted-wealth
+    let quantile_top01 item round (0.001 * count turtles) sorted-wealth
+    set inbottom50 fput (wealth <= quantile_top50) inbottom50
+    set in50to90 fput (wealth > quantile_top50 and wealth <= quantile_top10) in50to90
+    set intop10 fput (wealth > quantile_top10) intop10
+    set intop1 fput (wealth > quantile_top1) intop1
+    set intop01 fput (wealth > quantile_top01) intop01
+  ]
 end
 
 to visualize
   if visualize_world [
+    if standard-deviation [xcor] of turtles = 0 [ ask turtles [setxy random-xcor random-ycor]]
     ask turtles [
       set size ifelse-value (wealth < 0.3) [0.3] [sqrt wealth]
     ]
   ]
 end
 
-;;; Scenarios
-
-to scenario-parameters [scenario]
-  if scenario = "benchmark" [
-    set mu 0.06
-    set sigma 0.3
-  ]
-  if scenario = "entrepreneurs" [
-    set mu 0.015
-    set sigma 0.3
-  ]
-  setup
+to-report volatility_int
+  report (ifelse-value volatility_interval = "past_tick_1" [past_tick_1] volatility_interval = "past_tick_2" [past_tick_2] [past_tick_3])
+end
+to-report immobility_int
+  report (ifelse-value immobility_interval = "past_tick_1" [past_tick_1] immobility_interval = "past_tick_2" [past_tick_2] [past_tick_3])
 end
 
 ;;; Model reporters
 
 to-report random-growth-factor [mu_ sigma_]
-  report
-  exp (mu_ - sigma_ ^ 2 / 2 + sigma_ * random-shock)
+  report exp (mu_ - sigma_ ^ 2 / 2 + sigma_ * random-shock)
 end
 
 to-report random-shock
@@ -155,10 +168,6 @@ to-report num-wealth-above-threshold [w]
   report length filter [x -> x > fit-threshold w] w
 end
 
-to-report transition_prob_decile [move_from move_to]
-  report count turtles with [first decile_group = move_to and last decile_group = move_from] / count turtles with [last decile_group = move_from]
-end
-
 to-report wealth-fraction-top [w topshare]
   report sum (sublist (reverse sort w) 0 round (topshare * count turtles)) / sum w
 end
@@ -182,9 +191,13 @@ end
 ;;; For behavior space
 
 to-report tail_exponent_pdf report tail-exponent-fit [wealth] of turtles end
-to-report stay_in_top_10 report transition_prob_decile 10 10 end
+to-report immobility_bottom50 [interval] report count turtles with [item 0 inbottom50 and item interval inbottom50] / count turtles with [item 0 inbottom50] end
+to-report immobility_50to90 [interval] report count turtles with [item 0 in50to90 and item interval in50to90] / count turtles with [item 0 in50to90] end
+to-report immobility_top10 [interval] report count turtles with [item 0 intop10 and item interval intop10] / count turtles with [item 0 intop10] end
+to-report immobility_top1 [interval] report count turtles with [item 0 intop1 and item interval intop1] / count turtles with [item 0 intop1] end
+to-report immobility_top01 [interval] report count turtles with [item 0 intop01 and item interval intop01] / count turtles with [item 0 intop01] end
 to-report longterm_growth_rate report exp ((ln mean [wealth] of turtles) / ticks) end
-to-report sd_log_changes report standard-deviation sublist log_changes 0 min (list volatility_interval length log_changes) end
+to-report sd_log_changes [interval] report ifelse-value (length log_changes < 2) [0] [standard-deviation sublist log_changes 0 min (list interval length log_changes)] end
 to-report gini_all report gini [wealth] of turtles end
 to-report share_top_10 report wealth-fraction-top [wealth] of turtles 0.1 end
 to-report share_top_1 report wealth-fraction-top [wealth] of turtles 0.01 end
@@ -197,13 +210,13 @@ to-report normal-pdf [x m s]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-325
+290
 10
-598
-284
+568
+289
 -1
 -1
-8.030303030303031
+8.2
 1
 10
 1
@@ -224,15 +237,15 @@ ticks
 30.0
 
 SLIDER
-8
-272
-318
-305
+11
+295
+273
+328
 taxrate
 taxrate
 0
-0.3
-0.02
+0.4
+0.33
 0.001
 1
 NIL
@@ -247,7 +260,7 @@ N
 N
 10
 10000
-3000.0
+10000.0
 10
 1
 NIL
@@ -271,10 +284,10 @@ NIL
 1
 
 BUTTON
-8
-221
-70
-254
+10
+211
+72
+244
 Go
 go
 T
@@ -288,10 +301,10 @@ NIL
 1
 
 PLOT
-614
-7
-896
-127
+579
+8
+861
+128
 mean wealth
 NIL
 NIL
@@ -306,10 +319,10 @@ PENS
 "mean wealth" 1.0 0 -16777216 true "" "plot mean [wealth] of turtles"
 
 PLOT
-614
-367
-897
-488
+580
+512
+863
+633
 wealth inequality (Gini)
 NIL
 NIL
@@ -324,9 +337,9 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot ( 2 * sum (map [ [x y] -> x * y ] \n                 n-values N [ x -> x + 1 ] \n                 sort [wealth] of turtles) )\n      / (N * (sum [wealth] of turtles)) - (N + 1) / N"
 
 MONITOR
-896
+862
 52
-1045
+1011
 97
 long term growth rate
 longterm_growth_rate
@@ -345,19 +358,19 @@ Input parameters
 1
 
 TEXTBOX
-8
-197
-198
-218
+10
+187
+200
+208
 Taxation and redistribution
 12
 0.0
 1
 
 MONITOR
-896
+862
 8
-1045
+1011
 53
 mean wealth
 mean [wealth] of turtles
@@ -366,10 +379,10 @@ mean [wealth] of turtles
 11
 
 PLOT
-326
-289
-606
-459
+290
+294
+570
+464
 wealth distribution
 NIL
 NIL
@@ -382,13 +395,13 @@ false
 "clear-plot" "if (ticks mod 201 = 0) [clear-plot]"
 PENS
 "default" 1.0 0 -16777216 true "; clear-plot\nset-plot-x-range (floor (min [log wealth 10] of turtles)) (1 + ceiling max [log wealth 10] of turtles)\nset-plot-y-range precision (log (1 - (count turtles - 1) / count turtles) 10) 1 - 0.1 (0)" "let sorted-wealths sort [wealth] of turtles\nplot-pen-up\nplotxy log (item 0 sorted-wealths) 10 (0)\nplot-pen-down\nset-plot-pen-color ticks\nforeach n-values (length sorted-wealths) [i -> i] [id -> plotxy (log (item id sorted-wealths) 10) log (1 - (id) / length sorted-wealths) 10]"
-"mean" 1.0 0 -7500403 true "clear-plot" "if (show_fit_threshold and ticks = 200) [\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0 - precision (log N 10) 1\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0\n]\n;if (show_fit_threshold) [\n;  plotxy (log (mean_factor_fit * mean [wealth] of turtles) 10) 0 - precision (log N 10) 1\n;  plotxy (log (mean_factor_fit * mean [wealth] of turtles) 10) 0\n;]\nset-plot-x-range (floor (min [log wealth 10] of turtles)) (1 + ceiling max [log wealth 10] of turtles)\nset-plot-y-range precision (log (1 - (count turtles - 1) / count turtles) 10) 1 - 0.2 (0)\nset-plot-pen-color ticks\n\n"
+"mean" 1.0 0 -7500403 true "clear-plot" "if (ticks = stop_tick) [\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0 - precision (log N 10) 1\n  plotxy (log (fit-threshold [wealth] of turtles) 10) 0\n]\nset-plot-x-range (floor (min [log wealth 10] of turtles)) (1 + ceiling max [log wealth 10] of turtles)\nset-plot-y-range precision (log (1 - (count turtles - 1) / count turtles) 10) 1 - 0.2 (0)\nset-plot-pen-color ticks\n\n"
 
 PLOT
-450
-505
-610
-625
+410
+509
+570
+629
 tail exponent
 NIL
 NIL
@@ -403,21 +416,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "if (ticks > 0) [plot tail-exponent-fit [wealth] of turtles]"
 
 MONITOR
-1138
-392
-1268
-437
-tail exponent (pdf)
-tail_exponent_pdf
-3
-1
-11
-
-MONITOR
-468
-460
-608
-505
+431
+464
+571
+509
 tail exponent (cdf)
 (tail-exponent-fit [wealth] of turtles) - 1
 3
@@ -427,7 +429,7 @@ tail exponent (cdf)
 SLIDER
 8
 97
-181
+138
 130
 mu
 mu
@@ -440,10 +442,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-8
-142
-181
-175
+144
+99
+274
+132
 sigma
 sigma
 0
@@ -455,36 +457,25 @@ NIL
 HORIZONTAL
 
 MONITOR
-188
-142
-318
-187
+144
+136
+274
+181
 time average growth
 mu - sigma ^ 2 / 2
 5
 1
 11
 
-SWITCH
-325
-665
-477
-698
-show_fit_threshold
-show_fit_threshold
-0
-1
--1000
-
 CHOOSER
-76
-221
-261
-266
+78
+211
+273
+256
 tax_regime
 tax_regime
 "wealth" "wealth gains" "realized wealth gains"
-0
+2
 
 TEXTBOX
 12
@@ -497,10 +488,10 @@ Wealth: Random mutliplicative growth
 1
 
 MONITOR
-896
-368
-966
-413
+864
+512
+934
+557
 Gini
 gini_all
 5
@@ -508,10 +499,10 @@ gini_all
 11
 
 PLOT
-614
-487
-897
-624
+580
+634
+864
+771
 wealth shares
 NIL
 NIL
@@ -523,15 +514,15 @@ true
 false
 "" ""
 PENS
-"Top 10%" 1.0 0 -7500403 true "" "plot wealth-fraction-top [wealth] of turtles 0.1"
-"Top 1%" 1.0 0 -16777216 true "" "plot wealth-fraction-top [wealth] of turtles 0.01"
-"Top" 1.0 0 -2674135 true "" "plot max [wealth] of turtles / sum [wealth] of turtles"
+"Top 10%" 1.0 0 -16777216 true "" "plot wealth-fraction-top [wealth] of turtles 0.1"
+"Top 1%" 1.0 0 -2674135 true "" "plot wealth-fraction-top [wealth] of turtles 0.01"
+"Top" 1.0 0 -955883 true "" "plot max [wealth] of turtles / sum [wealth] of turtles"
 
 MONITOR
-896
-488
-956
-533
+864
+634
+924
+679
 Top 10%
 share_top_10
 3
@@ -539,10 +530,10 @@ share_top_10
 11
 
 MONITOR
-896
-533
-956
-578
+864
+679
+924
+724
 Top 1%
 share_top_1
 3
@@ -550,76 +541,43 @@ share_top_1
 11
 
 MONITOR
-896
-578
-956
-623
+864
+724
+924
+769
 Top
 share_top
 3
 1
 11
 
-MONITOR
-384
-493
-441
-538
-# in fit
-num-wealth-above-threshold [wealth] of turtles
-17
-1
-11
-
-MONITOR
-327
-493
-384
-538
-in fit
-fraction_in_fit
-3
-1
-11
-
 CHOOSER
-1138
-497
-1327
-542
+9
+710
+198
+755
 distribution_shocks
 distribution_shocks
 "normal" "double exponential"
 0
 
 MONITOR
-1156
-7
-1260
-52
-mean log wealth
-mean [log wealth 10] of turtles
-3
-1
-11
-
-MONITOR
-896
-280
-1044
-325
-sd last log changes
-sd_log_changes
+862
+383
+929
+428
+volatility
+sd_log_changes volatility_int
 5
 1
 11
 
 PLOT
-614
-247
-896
-367
-volatity (sd log changes)
+580
+383
+862
+503
+volatity
 NIL
 NIL
 0.0
@@ -630,28 +588,13 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot sd_log_changes"
-
-SLIDER
-896
-247
-1044
-280
-volatility_interval
-volatility_interval
-10
-50
-50.0
-1
-1
-NIL
-HORIZONTAL
+"default" 1.0 0 -16777216 true "" "plot sd_log_changes volatility_int"
 
 PLOT
-614
-127
-896
-247
+580
+263
+862
+383
 log change
 NIL
 NIL
@@ -668,9 +611,9 @@ PENS
 
 INPUTBOX
 1053
-8
+48
 1133
-73
+113
 stop_tick
 200.0
 1
@@ -678,36 +621,10 @@ stop_tick
 Number
 
 SLIDER
-1156
-73
-1288
-106
-mobility_interval
-mobility_interval
-0
-50
-10.0
-1
-1
-NIL
-HORIZONTAL
-
-MONITOR
-1156
-110
-1262
-155
-stay in Top 10%
-stay_in_top_10
-3
-1
-11
-
-SLIDER
-327
-460
-467
-493
+290
+464
+432
+497
 quantile_fit
 quantile_fit
 0.01
@@ -719,38 +636,21 @@ NIL
 HORIZONTAL
 
 MONITOR
-327
-539
-409
-584
+292
+511
+374
+556
 frac > mean
 fraction_above_mean
 3
 1
 11
 
-BUTTON
-1141
-452
-1336
-485
-profiler
-profiler:start\nsetup\nrepeat 20 [go]\nprofiler:stop                                  ;; stop profiling\ncsv:to-file \"profiler_data3.csv\" profiler:data  ;; save the results\nprofiler:reset    
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
 MONITOR
-188
-97
-318
-142
+9
+136
+139
+181
 ensemble growth
 exp mu - 1
 5
@@ -758,10 +658,10 @@ exp mu - 1
 11
 
 INPUTBOX
-1053
-73
 1133
-138
+48
+1213
+113
 past_tick_1
 50.0
 1
@@ -769,10 +669,10 @@ past_tick_1
 Number
 
 INPUTBOX
-1053
-138
 1133
-203
+114
+1213
+179
 past_tick_2
 25.0
 1
@@ -780,10 +680,10 @@ past_tick_2
 Number
 
 INPUTBOX
-1053
-203
 1133
-268
+178
+1213
+243
 past_tick_3
 10.0
 1
@@ -791,21 +691,21 @@ past_tick_3
 Number
 
 SWITCH
-325
-630
-481
-663
+1054
+8
+1214
+41
 visualize_world
 visualize_world
-1
+0
 1
 -1000
 
 PLOT
-1626
-9
-1971
-719
+862
+263
+1079
+383
 log changes distribution
 NIL
 NIL
@@ -817,81 +717,41 @@ true
 false
 "" "clear-plot"
 PENS
-"default" 0.01 1 -16777216 true "" "histogram log_changes"
-"pen-1" 1.0 0 -8630108 true "" "let num-points 100 ; Adjust for smoother/faster plots\nlet x-step (plot-x-max - plot-x-min) / num-points\nlet x-values (range plot-x-min (plot-x-max) x-step)\nforeach x-values [x ->\n  plotxy x length log_changes * x-step * normal-pdf x mean log_changes standard-deviation log_changes\n]"
-
-PLOT
-1356
-259
-1616
-464
-inverse cdf abs log changes
-NIL
-logarithmized
-0.0
-0.5
-0.0
--3.0
-true
-false
-"" ""
-PENS
-"default" 0.01 0 -16777216 true "" "clear-plot\nlet sorted_abs_log_changes sort map [x -> abs x] log_changes\nplot-pen-up\nplotxy log (item 0 sorted_abs_log_changes) 10 (0)\nplot-pen-down\nforeach n-values (length sorted_abs_log_changes) [i -> i] [id -> plotxy ((item id sorted_abs_log_changes)) log (1 - (id) / length sorted_abs_log_changes) 10]"
+"histogram" 0.01 1 -16777216 true "" "if ticks > 1 [histogram log_changes]"
+"normal pdf" 1.0 0 -8630108 true "" "if ticks > 1 [\n  let num-points 100 ; Adjust for smoother/faster plots\n  let x-step (plot-x-max - plot-x-min) / num-points\n  let x-values (range plot-x-min (plot-x-max) x-step)\n  foreach x-values [x ->\n    plotxy x length log_changes * x-step * normal-pdf x mean log_changes standard-deviation log_changes\n  ]\n]"
 
 SLIDER
-9
-310
-257
-343
-wealth_gains_realization_scale
-wealth_gains_realization_scale
+77
+259
+274
+292
+realization_scale
+realization_scale
 1
 5
-2.0
+1.5
 0.1
 1
 NIL
 HORIZONTAL
 
 MONITOR
-1117
-721
-1202
-766
+862
+128
+947
+173
 NIL
-total_wealth
-3
-1
-11
-
-MONITOR
-1117
-771
-1202
-816
-NIL
-tax_revenue
-3
-1
-11
-
-MONITOR
-1263
-746
-1436
-791
-NIL
-tax_revenue / total_wealth
-6
+taxshare
+4
 1
 11
 
 PLOT
-600
-709
-800
-859
-plot 1
+579
+128
+862
+255
+taxshare
 NIL
 NIL
 0.0
@@ -902,7 +762,103 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot tax_revenue / total_wealth"
+"default" 1.0 0 -16777216 true "" "plot taxshare"
+
+CHOOSER
+1077
+540
+1220
+585
+immobility_interval
+immobility_interval
+"past_tick_1" "past_tick_2" "past_tick_3"
+2
+
+CHOOSER
+928
+383
+1079
+428
+volatility_interval
+volatility_interval
+"past_tick_1" "past_tick_2" "past_tick_3"
+1
+
+MONITOR
+862
+174
+982
+219
+fraction paying tax
+fraction_paying_tax
+4
+1
+11
+
+PLOT
+940
+587
+1142
+771
+immobility
+NIL
+NIL
+0.0
+10.0
+0.0
+1.0
+true
+false
+"" ""
+PENS
+"Top 1%" 1.0 0 -2674135 true "" "plot ifelse-value (ticks > immobility_int) [immobility_top1 immobility_int] [0]"
+"Top 10%" 1.0 0 -16777216 true "" "plot ifelse-value (ticks > immobility_int) [immobility_top10 immobility_int] [0]"
+"50-90%" 1.0 0 -13345367 true "" "plot ifelse-value (ticks > immobility_int) [immobility_50to90 immobility_int] [0]"
+"Bottom 50%" 1.0 0 -10899396 true "" "plot ifelse-value (ticks > immobility_int) [immobility_bottom50 immobility_int] [0]"
+
+MONITOR
+1141
+587
+1220
+632
+Bottom 50%
+immobility_bottom50 immobility_int
+4
+1
+11
+
+MONITOR
+1141
+633
+1220
+678
+50%-90%
+immobility_50to90 immobility_int
+4
+1
+11
+
+MONITOR
+1141
+679
+1220
+724
+Top 10%
+immobility_top10 immobility_int
+4
+1
+11
+
+MONITOR
+1141
+724
+1220
+769
+Top 1%
+immobility_top1 immobility_int
+4
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
