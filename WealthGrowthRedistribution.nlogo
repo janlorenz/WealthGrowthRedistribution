@@ -1,5 +1,8 @@
 extensions [profiler csv]
-globals [log_changes old_mean_wealth]
+globals [tax_revenue
+         total_wealth
+         log_changes
+         old_mean_wealth]
 turtles-own [wealth
              wealth_return
              tax
@@ -67,7 +70,8 @@ to turtles_tax
 end
 
 to turtles_new_wealth
-  let tax_revenue sum [tax] of turtles
+  set total_wealth sum [wealth] of turtles
+  set tax_revenue sum [tax] of turtles
   let mean_log_wealth mean [log wealth 10] of turtles
   let sd_log_wealth standard-deviation [log wealth 10] of turtles
   ask turtles [
@@ -228,7 +232,7 @@ taxrate
 taxrate
 0
 0.3
-0.15
+0.02
 0.001
 1
 NIL
@@ -480,7 +484,7 @@ CHOOSER
 tax_regime
 tax_regime
 "wealth" "wealth gains" "realized wealth gains"
-2
+0
 
 TEXTBOX
 12
@@ -842,12 +846,63 @@ SLIDER
 wealth_gains_realization_scale
 wealth_gains_realization_scale
 1
-10
-1.5
+5
+2.0
 0.1
 1
 NIL
 HORIZONTAL
+
+MONITOR
+1117
+721
+1202
+766
+NIL
+total_wealth
+3
+1
+11
+
+MONITOR
+1117
+771
+1202
+816
+NIL
+tax_revenue
+3
+1
+11
+
+MONITOR
+1263
+746
+1436
+791
+NIL
+tax_revenue / total_wealth
+6
+1
+11
+
+PLOT
+600
+709
+800
+859
+plot 1
+NIL
+NIL
+0.0
+10.0
+0.0
+0.01
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot tax_revenue / total_wealth"
 
 @#$#@#$#@
 ## WHAT IS IT?
