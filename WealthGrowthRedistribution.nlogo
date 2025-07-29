@@ -2,11 +2,12 @@ globals [tax_revenue
          taxshare
          fraction_paying_tax
          log_changes
-         old_mean_wealth]
+         old_mean_wealth
+         median_taxbase]
 turtles-own [wealth
              wealth_return
+             taxbase
              tax
-             tax_wealth_gains
              wealth_on_acquisition
              inbottom50
              in50to90
@@ -53,37 +54,23 @@ to turtles_wealth_returns
 end
 
 to turtles_tax
-  ask turtles [
-    set tax (ifelse-value
+  ; set taxbase for the purpose of computing a dynamic allowance threshold
+  ; based on its median and allowance_fraction_median
+  ask turtles[ set taxbase (ifelse-value
     (tax_regime = "wealth")
-      [(wealth + wealth_return) * taxrate]
+      [ wealth + wealth_return ]
     (tax_regime = "wealth gains")
-      [(max list (wealth_return) 0) * taxrate]
+      [ max list (wealth_return) 0 ]
     (tax_regime = "realized wealth gains" and wealth + wealth_return >= realization_scale * wealth_on_acquisition)
-      [(wealth + wealth_return - wealth_on_acquisition) * taxrate]
+      [wealth + wealth_return - wealth_on_acquisition]
       [0]
     )
-    set tax_wealth_gains (max list (wealth_return) 0) * taxrate
   ]
+  set median_taxbase median [taxbase] of turtles with [taxbase > 0]
+  ; important: the median taxbase is only taken for those whose taxbase is not zero!
+  ; set tax of individuals
+  ask turtles [ set tax taxrate * max list 0 (taxbase - median_taxbase * allowance_fraction_median) ]
 end
-;to turtles_tax
-;  ask turtles [
-;    (ifelse
-;      (tax_regime = "wealth") [
-;        set tax (wealth + wealth_return) * taxrate
-;      ]
-;      (tax_regime = "wealth gains") [
-;        set tax (max list (wealth_return) 0) * taxrate
-;      ]
-;      (tax_regime = "realized wealth gains") [
-;        set tax ifelse-value (wealth + wealth_return >= wealth_gains_realization_scale * wealth_on_acquisition)
-;          [(wealth + wealth_return - wealth_on_acquisition) * taxrate]
-;          [0]
-;      ]
-;      [set tax 0]
-;    )
-;  ]
-;end
 
 to turtles_new_wealth
   set tax_revenue sum [tax] of turtles
@@ -237,28 +224,28 @@ ticks
 30.0
 
 SLIDER
-11
-295
-273
-328
+5
+340
+270
+373
 taxrate
 taxrate
 0
 0.4
-0.33
+0.015
 0.001
 1
 NIL
 HORIZONTAL
 
 SLIDER
-88
-37
-265
-70
+85
+35
+262
+68
 N
 N
-10
+1000
 10000
 10000.0
 10
@@ -267,10 +254,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-8
-36
-82
-69
+5
+34
+79
+67
 NIL
 Setup
 NIL
@@ -284,9 +271,9 @@ NIL
 1
 
 BUTTON
-10
+4
 211
-72
+66
 244
 Go
 go
@@ -359,9 +346,9 @@ Input parameters
 
 TEXTBOX
 10
-187
+190
 200
-208
+211
 Taxation and redistribution
 12
 0.0
@@ -427,10 +414,10 @@ tail exponent (cdf)
 11
 
 SLIDER
-8
-97
-138
-130
+5
+95
+135
+128
 mu
 mu
 -0.5
@@ -442,10 +429,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-144
-99
-274
-132
+140
+95
+270
+128
 sigma
 sigma
 0
@@ -457,10 +444,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-144
-136
-274
-181
+140
+135
+270
+180
 time average growth
 mu - sigma ^ 2 / 2
 5
@@ -468,14 +455,14 @@ mu - sigma ^ 2 / 2
 11
 
 CHOOSER
-78
+72
 211
-273
+267
 256
 tax_regime
 tax_regime
 "wealth" "wealth gains" "realized wealth gains"
-2
+0
 
 TEXTBOX
 12
@@ -600,13 +587,13 @@ NIL
 NIL
 0.0
 10.0
--0.1
-0.1
+-0.001
+0.001
 true
 false
 "" ""
 PENS
-"log change" 1.0 0 -16777216 true "" "if ticks > 0 [plot ln mean [wealth] of turtles - ln old_mean_wealth]"
+"log change" 1.0 0 -16777216 true "" "plot ifelse-value (ticks > 0) [first log_changes] [0]"
 "zero" 1.0 0 -7500403 true "" "plot 0"
 
 INPUTBOX
@@ -647,10 +634,10 @@ fraction_above_mean
 11
 
 MONITOR
-9
-136
-139
-181
+5
+135
+135
+180
 ensemble growth
 exp mu - 1
 5
@@ -721,9 +708,9 @@ PENS
 "normal pdf" 1.0 0 -8630108 true "" "if ticks > 1 [\n  let num-points 100 ; Adjust for smoother/faster plots\n  let x-step (plot-x-max - plot-x-min) / num-points\n  let x-values (range plot-x-min (plot-x-max) x-step)\n  foreach x-values [x ->\n    plotxy x length log_changes * x-step * normal-pdf x mean log_changes standard-deviation log_changes\n  ]\n]"
 
 SLIDER
-77
+71
 259
-274
+268
 292
 realization_scale
 realization_scale
@@ -859,6 +846,21 @@ immobility_top1 immobility_int
 4
 1
 11
+
+SLIDER
+4
+300
+269
+333
+allowance_fraction_median
+allowance_fraction_median
+0
+10
+10.0
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
