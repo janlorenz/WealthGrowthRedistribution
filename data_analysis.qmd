@@ -33,7 +33,7 @@ d$stop_tick |> table()
 
 ## Data description
 
-The simulation dataset has data from `r format(nrow(d), big.mark=",")` simulatiofvn runs. Simulations iterate over `r length(tax_regimes)` tax regimes (`r paste0('"', tax_regimes, '"', collapse = '; ')`), `r length(N)` numbers of entrepreneurs (`r paste0(format(N, big.mark = ",", scientific = FALSE), collapse = '; ')`), and tax rates $\{0,\stackrel{+0.001}{\dots},0.05\}$ for "Wealth Tax" and  $\{0,\stackrel{+0.005}{\dots},0.2\}$ for "Wealth Gains Tax" both with 51 values. This amounts to $`r length(tax_regimes)` \times `r length(N)` \times 51 = `r length(tax_regimes)*length(N)*51`$ parameter configurations. For each configuration we ran 100 simulation. 
+The simulation dataset has data from `r format(nrow(d), big.mark=",")` simulation runs. Simulations iterate over `r length(tax_regimes)` tax regimes (`r paste0('"', tax_regimes, '"', collapse = '; ')`), `r length(N)` numbers of entrepreneurs (`r paste0(format(N, big.mark = ",", scientific = FALSE), collapse = '; ')`), and tax rates $\{0,\stackrel{+0.001}{\dots},0.05\}$ for "Wealth Tax" and  $\{0,\stackrel{+0.005}{\dots},0.2\}$ for "Wealth Gains Tax" both with 51 values. This amounts to $`r length(tax_regimes)` \times `r length(N)` \times 51 = `r length(tax_regimes)*length(N)*51`$ parameter configurations. For each configuration we ran 100 simulation. 
 
 These parameters are fixed for each simulation: $\mu = 0.02$ and $\sigma = 0.3$ as parameters of the $\log$-normal distribution of the random yearly growth rates. This implies an expected growth rate of $\exp(\mu) = `r round(exp(0.02), digits = 5)`$. 
 
@@ -245,3 +245,50 @@ d |> filter(taxrate > 0) |>
  labs(caption = "time lags: past_tick_1 = 50, past_tick_2 = 25, past_tick_3 = 10,")
 ```
 
+
+## Simulation v2
+
+```{r}
+#| include: false
+d <- read_parquet("simdata_v2/WealthGrowthRedistribution_StrippedDown experiments all.parquet") |> 
+ mutate(Ns = format(N, scientific = FALSE, big.mark = ","),
+        `Tax Regime` = case_when(tax_regime == "wealth" ~ "Wealth Tax", 
+                                 tax_regime == "wealth gains" ~ "Wealth Gains Tax", 
+                                 tax_regime == "realized wealth gains" ~ "Realized Wealth Gains Tax (1.5)"),
+        # taxrate_wealth_scaled = if_else(tax_regime == "wealth", 7.5*taxrate, taxrate))
+        taxrate_wealth_scaled_75 = if_else(tax_regime == "wealth gains", taxrate/7.5, taxrate),
+        taxrate_wealth_scaled_60 = if_else(tax_regime == "wealth gains", taxrate/5.5 - 0.005, taxrate),
+        taxrate_wealth_scaled_180 = if_else(tax_regime == "wealth gains", taxrate/18, taxrate),
+        across(starts_with("tailexp"), \(x) x -1))
+tax_regimes <- unique(d$`Tax Regime`)
+N <- unique(d$N) |> sort()
+Nss <- unique(d$Ns)
+
+d$stop_tick |> table()
+```
+
+
+```{r}
+d |> filter(base_taxrate_wealth > 0) |> 
+ ggplot(aes(gini_stop_tick, stillintop10_past_tick_3, color = base_taxrate_wealth)) +
+ geom_point(alpha = 0.1) + 
+ geom_smooth(method = "lm") +
+ facet_grid(allowance_fraction_median~`Tax Regime`) +
+ labs(caption = "wealth tax regime, time lag 10") 
+```
+
+
+```{r}
+d |> filter(base_taxrate_wealth > 0) |> 
+ ggplot(aes(gini_stop_tick, stillintop10_past_tick_3, color = tax_regime, linetype = factor(allowance_fraction_median))) +
+ geom_smooth(method = "lm", se = FALSE) +
+ labs(caption = "time lag 10")
+```
+
+
+```{r}
+d |> filter(base_taxrate_wealth > 0) |> 
+ ggplot(aes(gini_stop_tick, stillintop10_past_tick_1, linetype = factor(allowance_fraction_median))) +
+ geom_smooth(method = "lm") +
+ labs(caption = "time lag 10")
+```

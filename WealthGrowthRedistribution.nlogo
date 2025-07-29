@@ -225,9 +225,9 @@ ticks
 
 SLIDER
 5
-340
+360
 270
-373
+393
 taxrate
 taxrate
 0
@@ -272,9 +272,9 @@ NIL
 
 BUTTON
 4
-211
+231
 66
-244
+264
 Go
 go
 T
@@ -346,9 +346,9 @@ Input parameters
 
 TEXTBOX
 10
-190
+210
 200
-211
+231
 Taxation and redistribution
 12
 0.0
@@ -370,7 +370,7 @@ PLOT
 294
 570
 464
-wealth distribution
+wealth distribution (inverse cdf)
 NIL
 NIL
 0.0
@@ -445,20 +445,20 @@ HORIZONTAL
 
 MONITOR
 140
-135
+155
 270
-180
+200
 time average growth
-mu - sigma ^ 2 / 2
+exp (mu - sigma ^ 2 / 2)
 5
 1
 11
 
 CHOOSER
 72
-211
+231
 267
-256
+276
 tax_regime
 tax_regime
 "wealth" "wealth gains" "realized wealth gains"
@@ -635,11 +635,11 @@ fraction_above_mean
 
 MONITOR
 5
+155
 135
-135
-180
+200
 ensemble growth
-exp mu - 1
+exp mu
 5
 1
 11
@@ -709,9 +709,9 @@ PENS
 
 SLIDER
 71
-259
+279
 268
-292
+312
 realization_scale
 realization_scale
 1
@@ -849,9 +849,9 @@ immobility_top1 immobility_int
 
 SLIDER
 4
-300
+320
 269
-333
+353
 allowance_fraction_median
 allowance_fraction_median
 0
@@ -861,6 +861,16 @@ allowance_fraction_median
 1
 NIL
 HORIZONTAL
+
+TEXTBOX
+10
+135
+160
+153
+Theoretical growth factors
+12
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
