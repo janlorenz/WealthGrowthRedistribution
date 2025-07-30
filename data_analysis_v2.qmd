@@ -1,0 +1,316 @@
+---
+title: "Figures for WealthGrowthRedistribution Simulation Analysis"
+format: 
+  html: 
+    toc: true
+    embed-resources: true
+    code-fold: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# Simulation studies
+
+```{r}
+#| include: false
+library(tidyverse)
+library(marquee) # For using markdown in ggplots
+library(arrow) # For reading parquet data
+wrangle <- function(d) d |> 
+  mutate(Ns = format(N, scientific = FALSE, big.mark = ","), # renaming for plots
+        `Tax Regime` = case_when(
+         tax_regime == "wealth" ~ "Wealth Tax", 
+         tax_regime == "wealth gains" ~ "Wealth Gains Tax", 
+         tax_regime == "realized wealth gains" ~ "Realized Wealth Gains Tax (1.5)"), # renaming for plots
+         taxrate_wealth_scaled_1 = case_when(
+          tax_regime == "wealth" ~ taxrate,
+          tax_regime == "wealth gains" ~ taxrate/7.5,
+          tax_regime == "realized wealth gains" ~ taxrate/20),
+         taxrate_wealth_scaled_2 = case_when(
+          tax_regime == "wealth" ~ taxrate,
+          tax_regime == "wealth gains" ~ taxrate/5.5 - 0.005,
+          tax_regime == "realized wealth gains" ~ taxrate/10 - 0.01),
+        across(starts_with("tailexp"), \(x) x - 1))
+d1 <- read_parquet("simdata_v1/WealthGrowthRedistribution_StrippedDown experiments v1 all.parquet") |> wrangle()
+d2 <- read_parquet("simdata_v2/WealthGrowthRedistribution_StrippedDown experiments v2 all.parquet") |> wrangle()
+```
+
+We did two simulation studies with two different versions of the model. Both simulations are comparable. The model used in the first version is identical in behavior with the second model for specific parameter values. The second model is an extension of the first one. The newer model includes a third tax regime called "Realized Wealth Gains Tax (1.5)" and also included the specification of an allowance threshold specified by a fraction of the median of the taxbase at the current time step. 
+
+The implementation of the taxation now first specifies the tax base for each individual and then applies proportional taxation to this tax base potentially taking into account an allowance as a fraction of the median value^[That means, for a value of `allowance_fraction_median` = 1 only the amount above the median of the taxbase is taxed which implies that exactly half of the individuals pay taxes. For `allowance_fraction_median` = 10 only value above ten times the median taxbase is taxed which implies that much less the half of the population are paying taxes.] of the tax base.^[More realistic would be to use allowance thresholds not being computed on the spot. However, for the sake of simplicity and comparability between different tax regimes and taxrates we refrained from modeling other methods of adjusting the allowance threshold with respect to the current wealth distribution.] In that way, the allowance can be specified in identically for all three tax regimes. 
+
+The three tax regime differ in the computation of the tax base:
+
+Tax regime | Tax base 
+-----------|-----------
+Wealth Tax | Current wealth of the individual. It mimicks the typical wealth tax. 
+Wealth Gains Tax | The difference between the new pre-tax wealth after the random growth of wealth and the wealth before but only if this difference is positive. So, only wealth gains in the last time step are taxed. It mimicks a simple form of capital income tax as only income (new wealth) from capital (old wealth) is taxed.
+Realized Wealth Gains Tax (1.5) | This regime builds on the wealth gains tax and is inspired by the fact that for stocks or company ownership capital income is only taxed when it is realized by selling shares for cash. This implies that randomly increasing wealth can remain untaxed for longer times. Our behavioral assumption is individuals realize  wealth gains when the value is 1.5 times larger than wealth at the acquisition.^[We introduce the parameter `realization_scale` = 1.5 here. It can be changed but we did not systematically study it yet.] Further on, we assume that after realization the money is immediately invested again in new shares making the wealth after realization and taxation (and the regular redistribution) the new wealth on acquisition where future wealth gains are compared to. 
+
+# Model behavior examples
+
+First we show same examples of the model behavior as visualized in our exploratory NetLogo model.^[The model can be tested in [NetLogoWeb](https://www.netlogoweb.org/launch#https://raw.githubusercontent.com/janlorenz/WealthGrowthRedistribution/refs/heads/main/WealthGrowthRedistribution.nlogo) however it runs much slower than in the desktop version and simulation runs tend to slow down while running. In NetLogoWeb N should be no more than 1,000. The [NetLogo desktop version 6.4](https://ccl.northwestern.edu/netlogo/6.4.0/) is recommended for anything more than a first look. The model can can be downloaded from NetLogoWeb and then run locally.] 
+In all simulations all individuals are initialized with a wealth of one. Then we typically run 200 time steps of random multiplicative wealth changes for each individual plus taxation (based on the given tax regime) and redistribution of the total wealth revenue in equal shares to all individuals. As taxation in the real world is typically year-wise this can be compared to a history of 200 years. Sometimes we study the longer period of 1,000 time steps. 
+
+We first show trajectories without taxation and then demonstrate the different tax regimes and finally different allowances for the wealth tax regime. 
+
+In every simulations the random multiplicative growth factors come from a [log-normal distribution](https://en.wikipedia.org/wiki/Log-normal_distribution) with parameters $\mu = 0.02$ and $\sigma = 0.3$.
+
+The screenshots of the NetLogo interfaces below show several output measures many off them tracked over time. 
+
+output measures | explanation | notes
+----------------|-------------|---------
+wealth distribution | At each time step the inverse cumulative distribution of wealth is plotted as a log-log-plot. A tail exponent (slope of the downward line in the log-log plot) is fitted for the top 10% percent of the wealth distribution (can be adjusted using `quantile_fit`). The fitted tail exponent is tracked over time. | Shows that a distribution converges towards a traveling wave of stable shape. Constant speed in the log-log-plot reflects exponential growth. Stabilization of the fitted tail exponent indicates a stabilization of the shape. 
+mean wealth | Tracks the mean wealth over time. The long term growth rate is $\exp (\frac{\log \bar{w}}{t})$ where $\bar{w}$ is the current mean wealth. | The long term growth rate is the average factor needed to for exponential growth from the initial value one to the current wealth over $t$ time steps.
+taxshare | Taxshare is the total tax revenue divided by the total wealth. It quantifies the level of redistribution. The fraction paying tax is the fraction of individuals which have positive tax in the current round. | The taxshare is a good indicator to compare what tax rates lead to similar outcomes under different tax regimes and tax allowances.
+log changes | The log change in one time step is the difference between the log of the mean wealth and the log of the mean wealth the time step before. The log change distribution is the distribution of all log changes over time. | Tracks the fluctuation of the mean wealth. 
+volatility | The standard deviation of the last 25 (or 10 or 50) log changes | Volatility clustering maybe noticed. 
+wealth inequality (Gini) | Gini coefficient of the current wealth distribution. | Stabilization of the Gini coefficient is another indicator of a stable shape of the distribution. 
+wealth shares | The fraction of wealth of the Top 10%, the Top 1%, or just the wealthiest individual. | Easier to understand inequality indicators. 
+immobility | Tracks the fraction of individuals in the Bottom 50% (50%-90% Range, Top 10%, and Top 1%) which were in the same group 10 (or 25 or 50) time steps before. | The larger these numbers the less social mobility happens. 
+
+: Output measures in NetLogo's interface {tbl-colwidths="[20,40,40]"}
+
+
+## No taxation
+
+We show two simulation without taxation one with 1,000 individuals and one with 10,000. We show a snapshot after 200 time steps and another one of the same run after 1,000 time steps. 
+
+The trajectories show the phenomenon of lossy multiplicative stochastic processes. With no taxation we are studying an ensemble of $N$ independent processes of multiplicative stochastic growth. In the long run, every single process converges to a long term yearly growth factor of $\exp (\mu - \frac{\sigma^2}{2}) \approx 0.975$. However, the expected value of the yearly growth factor is $\exp \mu \approx 1.0202$. Empirically, this can be approached using large ensembles. However, in every ensemble each individual process tends to shrink over time while dispersion between trajectories is constantly growing. This implies that the mean wealth (as the total wealth) relies more and more on one individual only. This is clearly visible in the long trajectories and in particular in the smaller ensemble ($N=1000, t=1000$) where the mean wealth has shrunk from one to 0.114 over the 1,000 time steps while the Gini index has quickly converged to almost one (most unequal distribution). Further on some extreme spike of the mean wealth are visible. These are time steps where the wealthiest individual had a lucky streak which is reflected in the "wealth shares" graph which shows that in these times the riches individual has also almost 100% of the total wealth. The distribution of wealth converges to a log-normal distribution with an every increasing standard deviation due to the central limit theorem. This reflected in a parabola shape of the right tail of the inverse cumulative distribution function in a log-log-plot. The increasing standard deviation of the distribution also prevents that the power law tail exponent fit does not stabilize but tends to lower and lower values. 
+::: {.panel-tabset}
+## N=1000, t=200
+
+![](img/NetLogo2_0_t_200_N_1000.png)
+
+## N=1000, t=1000
+
+![](img/NetLogo2_0_t_1000_N_1000.png)
+
+## N=10000, t=200
+
+![](img/NetLogo2_0_t_200_N_10000.png)
+
+## N=10000, t=1000
+
+![](img/NetLogo2_0_t_1000_N_10000.png)
+:::
+
+
+## Tax regimes
+
+The redistribution of the total tax revenue in equal shares to all individuals adds an additive component to the individual multiplicative stochastic wealth growth processes. This implies that the wealth distribution converges to a distribution with a power law tail and an exponent stabilizing over time. Further on, the whole shape of the distribution stabilze to a traveling wave, that means that distribution in the log-log-plot only shifts with constant speed along the x-axis. 
+
+The simulations of the three different tax regimes always run for 200 time steps with 10,000 individuals. For each regime we use a different tax rate such that all three simulations lead to roughly comparable output measures for the tax share (tax revue fraction at total wealth), inequality, and immobility.  
+
+This shows that similar level output measures can be reached with very different tax rates under the different tax regimes. 
+
+::: {.panel-tabset}
+## Wealth Tax
+
+Tax rate 1.5%
+
+![](img/NetLogo2_wealth_0_015.png)
+
+## Wealth Gains Tax
+
+Tax rate 11%
+
+![](img/NetLogo2_wealth_gains_0_11.png)
+
+## Realized Wealth Gains Tax (1.5)
+
+Tax rate 22%
+
+![](img/NetLogo2_realized_wealth_gains_1_5_0_22.png)
+:::
+
+
+
+## Tax allowance
+
+The simulations of the tax allowance also always run for 200 time steps with 10,000 individuals. We focus on the wealth tax regime and show three runs for a tax of 1.5% (as above) with no allowance (as seen before), with an allowance identical to the median wealth and an allowance of ten times the median wealth. Finally, we show one additional run with the large allowance but with a tax rate raised to 3% such that output measures for output measures for the tax share (tax revue fraction at total wealth), inequality, and immobility are comparable to no allowance. 
+
+::: {.panel-tabset}
+## No allowance
+
+Wealth tax with tax rate 1.5% 
+
+![](img/NetLogo2_wealth_0_015.png)
+
+## Allowance median wealth
+
+Wealth tax with tax rate 1.5%
+
+![](img/NetLogo2_wealth_0_015_allowance_1.png)
+
+## Allowance 10 times median wealth
+
+Wealth tax with tax rate 1.5% 
+
+![](img/NetLogo2_wealth_0_015_allowance_10.png)
+
+## Allowance 10 times median wealth, higher tax
+
+Wealth tax with tax rate 3% 
+
+![](img/NetLogo2_wealth_0_03_allowance_10.png)
+:::
+
+
+# Data Analysis
+
+## Different populations
+
+The fitted tail exponents after 200 time steps show a clear linear trend on average above a certain tax rate (different for different tax regime) as show cased for simulations with $N = 10,000$ individuals.  
+
+```{r}
+#| fig-cap: "Fitted tail exponents" 
+d1 |> filter(N == 10000, stop_tick == 200) |>
+ ggplot(aes(taxrate, tailexp_top10_stop_tick)) +
+ geom_point(alpha = 0.05) +
+ geom_smooth(method = "gam", formula = y ~ s(x, bs = "cs")) +
+ facet_grid(Ns ~ `Tax Regime`, scales = "free_x") +
+ labs(x = "tax rate", y = "Fitted tail exponent (Top 10%)", 
+      caption = paste(nrow(d1 |> filter(N==10000, taxrate==0.05, tax_regime=="wealth", stop_tick==200)),"simulation runs per tax rate")) +
+ theme_minimal()
+```
+
+Based on this observation we look at the average tail exponent next for different values of $N$. 
+
+```{r}
+#| fig-cap: "Average fitted tail exponents" 
+d1 |> summarize(mean_tailexp_top10_stop_tick = mean(tailexp_top10_stop_tick), 
+               .by = c(`Tax Regime`, taxrate, Ns)) |> 
+ ggplot(aes(taxrate, mean_tailexp_top10_stop_tick, color = Ns)) + 
+ geom_line() +
+ facet_wrap(~`Tax Regime`, scales = "free_x") +
+ labs(x = "tax rate", y = "Average fitted tail exponent (Top 10%)", 
+      caption = paste(nrow(d1 |> filter(N==10000, taxrate==0.05, tax_regime=="wealth", stop_tick==200)),"simulation runs per tax rate for N=1,000 and N=10,000; 100 runs for the other N")) +
+ theme_minimal()
+```
+
+Average tail exponents are almost identical leading us to the observation that the population has no major effect on the stabilization of the travel wave distribution. 
+
+We look at other outcome measures in the same way. 
+
+```{r}
+#| fig-cap: "Average fitted tail exponents" 
+#| fig-width: 9
+d1 |> summarize(`Mean Gini` = mean(gini_stop_tick),
+                `Mean Share Top 1%` = mean(share_top1_stop_tick), 
+                `Mean Immobility Top 10%` = mean(stillintop10_past_tick_3),
+                `Mean Volatility` = mean(volatility_past_tick_2),
+               .by = c(`Tax Regime`, taxrate, Ns)) |> 
+ pivot_longer(c(`Mean Gini`, `Mean Share Top 1%`, `Mean Immobility Top 10%`, `Mean Volatility`)) |>
+ rename(N = Ns) |> 
+ ggplot(aes(taxrate, value, color = N)) + 
+ geom_line() +
+ facet_wrap(`Tax Regime` ~ name, scales = "free", ncol = 4) +
+ labs(x = "tax rate", y = "Average value",
+      caption = paste(nrow(d1 |> filter(N==10000, taxrate==0.05, tax_regime=="wealth", stop_tick==200)),"simulation runs per tax rate for N=1,000 and N=10,000; 100 runs for the other N")) +
+ guides(color = guide_legend(position = "bottom", nrow = 1)) +
+ theme_minimal() 
+```
+
+For the the mean Gini coefficient and the mean immobility of the top 10% we find also almost no effect of population size. For the wealth share of the top 1% we find marginally larger values for larger populations for intermediate tax rates. Only for volatility we find a sizably higher values for smaller populations. 
+
+Over all, we see a stable patterns that inequality, immobility and volatility decreases with larger tax rates. 
+
+## Long term growth rates
+
+```{r}
+#| fig-cap: "Long term growth rates" 
+d1 |> filter(N == 10000, stop_tick == 200) |>
+ ggplot(aes(taxrate, growth_rate_all)) +
+ geom_point(alpha = 0.05) +
+ geom_smooth(method = "gam", formula = y ~ s(x, bs = "cs")) +
+ facet_grid(Ns ~ `Tax Regime`, scales = "free_x") +
+ labs(x = "tax rate", y = "Long term growth rates", 
+      caption = paste(nrow(d1 |> filter(N==10000, taxrate==0.05, tax_regime=="wealth", stop_tick==200)),"simulation runs per tax rate")) +
+ theme_minimal()
+```
+
+```{r}
+#| fig-cap: "Average long term growth rates" 
+d1 |> summarize(mean_growth_rate = mean(growth_rate_all), 
+               .by = c(`Tax Regime`, taxrate, Ns)) |>
+ rename(N = Ns) |> 
+ ggplot(aes(taxrate, mean_growth_rate, color = N)) + 
+ geom_line() +
+ facet_wrap(~`Tax Regime`, scales = "free_x") +
+ labs(x = "tax rate", y = "Average fitted tail exponent (Top 10%)", 
+      caption = paste(nrow(d1 |> filter(N==10000, taxrate==0.05, tax_regime=="wealth", stop_tick==200)),"simulation runs per tax rate for N=1,000 and N=10,000; 100 runs for the other N")) +
+ theme_minimal()
+```
+
+
+## Scaling tax rates to match different tax regimes
+
+### Scaling Fit 1
+
+We hand-fitted two scaling factors such that outcome measures for different tax regimes coincide for different tax rates. To that end, we scaled down the tax rates of Wealth Gains Tax by a factor of 7.5 and those of Realized Wealth Gains (1.5) by a factor of 20. 
+
+```{r}
+#| fig-cap: Comparison of tax regimes with scales tax rates, version 1
+d2 |> filter(N == 10000, stop_tick == 200) |> 
+ summarize(`Mean Tail Exponent` = mean(tailexp_top10_stop_tick), 
+           `Mean Gini` = mean(gini_stop_tick), 
+           `Mean Share Top 1%` = mean(share_top1_stop_tick), 
+           `Mean Immobility Top 10%` = mean(stillintop10_past_tick_3),
+           `Mean taxshare` = mean(taxshare_stop_tick),
+           .by = c(`Tax Regime`, taxrate_wealth_scaled_1, Ns)) |> 
+ pivot_longer(c(`Mean Tail Exponent`, `Mean Gini`, `Mean Share Top 1%`, `Mean Immobility Top 10%`, 
+                `Mean taxshare`)) |>
+ rename(N = Ns) |> 
+ ggplot(aes(taxrate_wealth_scaled_1, value, color = `Tax Regime`)) + 
+ geom_line() +
+ facet_wrap(~name, scales = "free_y") +
+ labs(x = "tax rate scaled by tax regimes") +
+ labs(caption = 'scales: Wealth Tax as is, Wealth Gains tax scaled down by 7.5\nRealized Wealth Gains (1.5) scaled down by 20') +
+ guides(color = guide_legend(position = "bottom", nrow = 1)) +
+ theme_minimal()
+```
+
+For all the indicators the lines with rescaled tax rates coincide very well for low tax rates up to the Wealth Tax rate of 0.01. For Mean immobility the rescaled tax rates match fairly well for all tax rates. 
+
+For the critical value of Wealth Tax = 0.01 this implies critical values of Wealth Gains Tax = 0.075 and Realized Wealth Gains Tax (1.5) = 0.2.
+
+For the value of Wealth Tax = 0.015 this implies comparable values of Wealth Gains Tax = 0.1125 and Realized Wealth Gains Tax (1.5) = 0.3
+
+### Scaling Fit 2
+
+The next goal is to make output measures comparable for the larger taxrates in the linear tail exponent regime, which also coincides roughly with the regime were stochastic loss of growth potential is essentially eliminated. 
+
+The second handfitted rescaling involves scaling down and shifting backward. 
+
+Wealth Gains Tax rate: scale down by 5.5 and then shift by -0.005 (or first shift the original tax rates by -0.0275) 
+
+Realized Wealth Gains Tax (1.5) rate: scale down by 10 and then shift by -0.01 (or first shift the original tax rates by -0.1) 
+
+For the critical value of Wealth Tax = 0.01 this implies critical values of Wealth Gains Tax = 0.085 and Realized Wealth Gains Tax (1.5) = 0.2
+
+
+```{r}
+#| fig-cap: Comparison of tax regimes with scales tax rates, version 2
+d2 |> filter(N == 10000, stop_tick == 200) |> 
+ summarize(`Mean Tail Exponent` = mean(tailexp_top10_stop_tick), 
+           `Mean Gini` = mean(gini_stop_tick), 
+           `Mean Share Top 1%` = mean(share_top1_stop_tick), 
+           `Mean Immobility Top 10%` = mean(stillintop10_past_tick_3),
+           `Mean taxshare` = mean(taxshare_stop_tick),
+           .by = c(`Tax Regime`, taxrate_wealth_scaled_2, Ns)) |> 
+ pivot_longer(c(`Mean Tail Exponent`, `Mean Gini`, `Mean Share Top 1%`, `Mean Immobility Top 10%`, 
+                `Mean taxshare`)) |>
+ rename(N = Ns) |> 
+ ggplot(aes(taxrate_wealth_scaled_2, value, color = `Tax Regime`)) + 
+ geom_line() +
+ facet_wrap(~name, scales = "free_y") +
+ labs(x = "tax rate scaled by tax regimes") +
+ labs(caption = 'scales: Wealth Tax as is, Wealth Gains tax scaled down by 7.5\nRealized Wealth Gains (1.5) scaled down by 20') +
+ guides(color = guide_legend(position = "bottom", nrow = 1)) +
+ theme_minimal()
+```
+
+
+
+For the value of Wealth Tax = 0.015 this implies comparable values of Wealth Gains Tax = 0.11 and Realized Wealth Gains Tax (1.5) = 0.25
