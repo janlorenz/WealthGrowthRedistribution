@@ -16,6 +16,18 @@ editor_options:
 library(tidyverse)
 library(marquee) # For using markdown in ggplots
 library(arrow) # For reading parquet data
+library(glue)
+# Hand-picked rescale parameters
+## Low tax regime fitting
+scale_down_low_wealthgains = 7.5
+scale_down_low_realizedwealthgains1_5 = 22.5
+## High tax regime fitting
+scale_down_high_wealthgains = 5.5
+shift_high_wealthgains = -0.005
+scale_down_high_realizedwealthgains1_5 = 10
+shift_high_realizedwealthgains1_5 = -0.01
+
+# Compute a few more variables
 wrangle <- function(d) d |> 
   mutate(Ns = format(N, scientific = FALSE, big.mark = ","), # renaming for plots
         `Tax Regime` = case_when(
@@ -24,12 +36,12 @@ wrangle <- function(d) d |>
          tax_regime == "realized wealth gains" ~ "Realized Wealth Gains Tax (1.5)"), # renaming for plots
          taxrate_wealth_scaled_1 = case_when(
           tax_regime == "wealth" ~ taxrate,
-          tax_regime == "wealth gains" ~ taxrate/7.5,
-          tax_regime == "realized wealth gains" ~ taxrate/20),
+          tax_regime == "wealth gains" ~ taxrate/scale_down_low_wealthgains,
+          tax_regime == "realized wealth gains" ~ taxrate/scale_down_low_realizedwealthgains1_5),
          taxrate_wealth_scaled_2 = case_when(
           tax_regime == "wealth" ~ taxrate,
-          tax_regime == "wealth gains" ~ taxrate/5.5 - 0.005,
-          tax_regime == "realized wealth gains" ~ taxrate/10 - 0.01),
+          tax_regime == "wealth gains" ~ taxrate/scale_down_high_wealthgains + shift_high_wealthgains,
+          tax_regime == "realized wealth gains" ~ taxrate/scale_down_high_realizedwealthgains1_5 + shift_high_realizedwealthgains1_5),
         across(starts_with("tailexp"), \(x) x - 1))
 d1 <- read_parquet("simdata_v1/WealthGrowthRedistribution_StrippedDown experiments v1 all.parquet") |> wrangle()
 d2 <- read_parquet("simdata_v2/WealthGrowthRedistribution_StrippedDown experiments v2 all.parquet") |> wrangle()
@@ -104,6 +116,7 @@ The redistribution of the total tax revenue in equal shares to all individuals a
 The simulations of the three different tax regimes always run for 200 time steps with 10,000 individuals. For each regime we use a different tax rate such that all three simulations lead to roughly comparable output measures for the tax share (tax revue fraction at total wealth), inequality, and immobility.  
 
 This shows that similar level output measures can be reached with very different tax rates under the different tax regimes. 
+
 
 ::: {.panel-tabset}
 ## Wealth Tax
@@ -249,7 +262,7 @@ d1 |> summarize(mean_growth_rate = mean(growth_rate_all),
 
 ### Scaling Fit 1
 
-We hand-fitted two scaling factors such that outcome measures for different tax regimes coincide for different tax rates. To that end, we scaled down the tax rates of Wealth Gains Tax by a factor of 7.5 and those of Realized Wealth Gains (1.5) by a factor of 20. 
+We hand-fitted two scaling factors such that outcome measures for different tax regimes coincide for different tax rates. To that end, we scaled down the tax rates of Wealth Gains Tax by a factor of `r scale_down_low_wealthgains` and those of Realized Wealth Gains (1.5) by a factor of `r scale_down_low_realizedwealthgains1_5`. 
 
 ```{r}
 #| fig-cap: Comparison of tax regimes with scales tax rates, version 1
@@ -267,16 +280,16 @@ d2 |> filter(N == 10000, stop_tick == 200) |>
  geom_line() +
  facet_wrap(~name, scales = "free_y") +
  labs(x = "tax rate scaled by tax regimes") +
- labs(caption = 'scales: Wealth Tax as is, Wealth Gains tax scaled down by 7.5\nRealized Wealth Gains (1.5) scaled down by 20') +
+ labs(caption = glue('scales: Wealth Tax as is, Wealth Gains tax scaled down by {scale_down_low_wealthgains}\nRealized Wealth Gains (1.5) scaled down by {scale_down_low_realizedwealthgains1_5}')) +
  guides(color = guide_legend(position = "bottom", nrow = 1)) +
  theme_minimal()
 ```
 
 For all the indicators the lines with rescaled tax rates coincide very well for low tax rates up to the Wealth Tax rate of 0.01. For Mean immobility the rescaled tax rates match fairly well for all tax rates. 
 
-For the critical value of Wealth Tax = 0.01 this implies critical values of Wealth Gains Tax = 0.075 and Realized Wealth Gains Tax (1.5) = 0.2.
+For the critical value of Wealth Tax = 0.01 this implies critical values of Wealth Gains Tax = `r 0.01 * scale_down_low_wealthgains` and Realized Wealth Gains Tax (1.5) = `r 0.01 * scale_down_low_realizedwealthgains1_5`.
 
-For the value of Wealth Tax = 0.015 this implies comparable values of Wealth Gains Tax = 0.1125 and Realized Wealth Gains Tax (1.5) = 0.3
+For the value of Wealth Tax = 0.015 this implies comparable values of Wealth Gains Tax = `r 0.015 * scale_down_low_wealthgains` and Realized Wealth Gains Tax (1.5) = `r 0.015 * scale_down_low_realizedwealthgains1_5`.
 
 ### Scaling Fit 2
 
@@ -284,11 +297,11 @@ The next goal is to make output measures comparable for the larger taxrates in t
 
 The second handfitted rescaling involves scaling down and shifting backward. 
 
-Wealth Gains Tax rate: scale down by 5.5 and then shift by -0.005 (or first shift the original tax rates by -0.0275) 
+Wealth Gains Tax rate: scale down by `r scale_down_high_wealthgains` and then shift by `r shift_high_wealthgains` (or first shift the original tax rates by `r scale_down_high_wealthgains*shift_high_wealthgains`).
 
-Realized Wealth Gains Tax (1.5) rate: scale down by 10 and then shift by -0.01 (or first shift the original tax rates by -0.1) 
+Realized Wealth Gains Tax (1.5) rate: scale down by `r scale_down_high_realizedwealthgains1_5` and then shift by `r shift_high_realizedwealthgains1_5` (or first shift the original tax rates by `r scale_down_high_realizedwealthgains1_5*shift_high_realizedwealthgains1_5`). 
 
-For the critical value of Wealth Tax = 0.01 this implies critical values of Wealth Gains Tax = 0.085 and Realized Wealth Gains Tax (1.5) = 0.2
+For the critical value of Wealth Tax = 0.01 this implies critical values of Wealth Gains Tax = `r (0.01 - shift_high_wealthgains) * scale_down_high_wealthgains` and Realized Wealth Gains Tax (1.5) = `r (0.01 - shift_high_realizedwealthgains1_5) * scale_down_high_realizedwealthgains1_5`.
 
 
 ```{r}
@@ -307,11 +320,11 @@ d2 |> filter(N == 10000, stop_tick == 200) |>
  geom_line() +
  facet_wrap(~name, scales = "free_y") +
  labs(x = "tax rate scaled by tax regimes") +
- labs(caption = 'scales: Wealth Tax as is, Wealth Gains tax scaled down by 7.5\nRealized Wealth Gains (1.5) scaled down by 20') +
+ labs(caption = glue('scales: Wealth Tax as is, Wealth Gains tax scaled down by {scale_down_high_wealthgains} and then shifted by {shift_high_wealthgains}\nRealized Wealth Gains (1.5) scaled down by {scale_down_high_realizedwealthgains1_5} and then shifted by {shift_high_realizedwealthgains1_5}')) +
  guides(color = guide_legend(position = "bottom", nrow = 1)) +
  theme_minimal()
 ```
 
 
 
-For the value of Wealth Tax = 0.015 this implies comparable values of Wealth Gains Tax = 0.11 and Realized Wealth Gains Tax (1.5) = 0.25
+For the value of Wealth Tax = 0.015 this implies comparable values of Wealth Gains Tax = `r (0.015 - shift_high_wealthgains) * scale_down_high_wealthgains` and Realized Wealth Gains Tax (1.5) = `r (0.015 - shift_high_realizedwealthgains1_5) * scale_down_high_realizedwealthgains1_5`.
