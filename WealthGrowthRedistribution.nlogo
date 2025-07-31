@@ -5,6 +5,7 @@ globals [tax_revenue
          old_mean_wealth
          median_taxbase]
 turtles-own [wealth
+             wealth_list
              wealth_return
              taxbase
              tax
@@ -31,6 +32,7 @@ to initialize
   if visualize_world [setxy random-xcor random-ycor]
   set shape "face happy"
   set wealth 1
+  set wealth_list (list)
   set wealth_on_acquisition wealth
   set inbottom50 (list)
   set in50to90 (list)
@@ -100,6 +102,7 @@ to update_data
     set intop10 fput (wealth > quantile_top10) intop10
     set intop1 fput (wealth > quantile_top1) intop1
     set intop01 fput (wealth > quantile_top01) intop01
+    set wealth_list fput wealth wealth_list
   ]
 end
 
@@ -117,6 +120,9 @@ to-report volatility_int
 end
 to-report immobility_int
   report (ifelse-value immobility_interval = "past_tick_1" [past_tick_1] immobility_interval = "past_tick_2" [past_tick_2] [past_tick_3])
+end
+to-report autocorrelation_int
+  report (ifelse-value autocorrelation_lag = "past_tick_1" [past_tick_1] autocorrelation_lag = "past_tick_2" [past_tick_2] [past_tick_3])
 end
 
 ;;; Model reporters
@@ -192,6 +198,15 @@ to-report share_top report max [wealth] of turtles / sum [wealth] of turtles end
 to-report fraction_in_fit report num-wealth-above-threshold [wealth] of turtles / count turtles end
 to-report fraction_above_mean report count turtles with [wealth > mean [wealth] of turtles] / count turtles end
 
+to-report correlation [x y]
+  let covariance mean (map [[a b] -> (a - mean x) * (b - mean y)] x y)
+  report covariance / (standard-deviation x * standard-deviation y)
+end
+to-report autocorrelation [lag]
+  report correlation map [turt -> ifelse-value (autocorr_log_wealth?) [[(log (item 0 wealth_list) 10)] of turt] [[(item 0 wealth_list)] of turt]] sort-on [who] turtles
+                     map [turt -> ifelse-value (autocorr_log_wealth?) [[(log (item lag wealth_list) 10)] of turt] [[(item lag wealth_list)] of turt]] sort-on [who] turtles
+end
+
 to-report normal-pdf [x m s]
   report (1 / (s * sqrt (2 * pi))) * exp (-0.5 * ((x - m) / s) ^ 2)
 end
@@ -232,7 +247,7 @@ taxrate
 taxrate
 0
 0.4
-0.015
+0.03
 0.001
 1
 NIL
@@ -245,9 +260,9 @@ SLIDER
 68
 N
 N
-1000
+10
 10000
-10000.0
+3000.0
 10
 1
 NIL
@@ -462,7 +477,7 @@ CHOOSER
 tax_regime
 tax_regime
 "wealth" "wealth gains" "realized wealth gains"
-0
+1
 
 TEXTBOX
 12
@@ -752,14 +767,14 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot taxshare"
 
 CHOOSER
-1077
-540
-1220
-585
+1095
+390
+1238
+435
 immobility_interval
 immobility_interval
 "past_tick_1" "past_tick_2" "past_tick_3"
-2
+0
 
 CHOOSER
 928
@@ -783,10 +798,10 @@ fraction_paying_tax
 11
 
 PLOT
-940
-587
-1142
-771
+958
+437
+1160
+621
 immobility
 NIL
 NIL
@@ -804,10 +819,10 @@ PENS
 "Bottom 50%" 1.0 0 -10899396 true "" "plot ifelse-value (ticks > immobility_int) [immobility_bottom50 immobility_int] [0]"
 
 MONITOR
-1141
-587
-1220
-632
+1159
+437
+1238
+482
 Bottom 50%
 immobility_bottom50 immobility_int
 4
@@ -815,10 +830,10 @@ immobility_bottom50 immobility_int
 11
 
 MONITOR
-1141
-633
-1220
-678
+1159
+483
+1238
+528
 50%-90%
 immobility_50to90 immobility_int
 4
@@ -826,10 +841,10 @@ immobility_50to90 immobility_int
 11
 
 MONITOR
-1141
-679
-1220
-724
+1159
+529
+1238
+574
 Top 10%
 immobility_top10 immobility_int
 4
@@ -837,10 +852,10 @@ immobility_top10 immobility_int
 11
 
 MONITOR
-1141
-724
-1220
-769
+1159
+574
+1238
+619
 Top 1%
 immobility_top1 immobility_int
 4
@@ -856,7 +871,7 @@ allowance_fraction_median
 allowance_fraction_median
 0
 10
-10.0
+0.0
 0.1
 1
 NIL
@@ -871,6 +886,56 @@ Theoretical growth factors
 12
 0.0
 1
+
+MONITOR
+1180
+625
+1240
+670
+autocor
+autocorrelation autocorrelation_int
+4
+1
+11
+
+PLOT
+955
+670
+1240
+835
+autocorrelation wealth individuals
+NIL
+NIL
+0.0
+10.0
+0.0
+1.0
+true
+false
+"" ""
+PENS
+"3" 1.0 0 -16777216 true "" "plot autocorrelation autocorrelation_int"
+
+CHOOSER
+1030
+625
+1177
+670
+autocorrelation_lag
+autocorrelation_lag
+"past_tick_1" "past_tick_2" "past_tick_3"
+0
+
+SWITCH
+1065
+835
+1240
+868
+autocorr_log_wealth?
+autocorr_log_wealth?
+0
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
