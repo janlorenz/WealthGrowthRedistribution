@@ -6,6 +6,8 @@ globals [tax_revenue
          median_taxbase]
 turtles-own [wealth
              wealth_list
+             normalized_wealth
+             normalized_wealth_list
              wealth_return
              taxbase
              tax
@@ -32,13 +34,19 @@ to initialize
   if visualize_world [setxy random-xcor random-ycor]
   set shape "face happy"
   set wealth 1
+  set normalized_wealth 1
   set wealth_list (list)
+  set normalized_wealth_list (list)
   set wealth_on_acquisition wealth
   set inbottom50 (list)
   set in50to90 (list)
   set intop10 (list)
   set intop1 (list)
   set intop01 (list)
+end
+
+to restart_normalized_wealth_list
+  ask turtles [set normalized_wealth_list (list)]
 end
 
 to go
@@ -102,7 +110,9 @@ to update_data
     set intop10 fput (wealth > quantile_top10) intop10
     set intop1 fput (wealth > quantile_top1) intop1
     set intop01 fput (wealth > quantile_top01) intop01
+    set normalized_wealth wealth / old_mean_wealth
     set wealth_list fput wealth wealth_list
+    set normalized_wealth_list fput normalized_wealth normalized_wealth_list
   ]
 end
 
@@ -202,9 +212,17 @@ to-report correlation [x y]
   let covariance mean (map [[a b] -> (a - mean x) * (b - mean y)] x y)
   report covariance / (standard-deviation x * standard-deviation y)
 end
-to-report autocorrelation [lag]
-  report correlation map [turt -> ifelse-value (autocorr_log_wealth?) [[(log (item 0 wealth_list) 10)] of turt] [[(item 0 wealth_list)] of turt]] sort-on [who] turtles
-                     map [turt -> ifelse-value (autocorr_log_wealth?) [[(log (item lag wealth_list) 10)] of turt] [[(item lag wealth_list)] of turt]] sort-on [who] turtles
+to-report autocorrelation_ensemble [lag]
+  ifelse (length [wealth_list] of turtle 0 < lag + 1) [report 0] [
+  report correlation map [turt -> ifelse-value (autocorr_log_wealth?) [[(log (item 0 wealth_list) 10)] of turt] [[(item 0 normalized_wealth_list)] of turt]] sort-on [who] turtles
+                     map [turt -> ifelse-value (autocorr_log_wealth?) [[(log (item lag wealth_list) 10)] of turt] [[(item lag normalized_wealth_list)] of turt]] sort-on [who] turtles
+  ]
+end
+to-report autocorrelation [x lag] ; This is for a list x
+  (ifelse (length x < lag + 2 or length x < 2) [report 0]
+    (lag = 0) [report 1]
+    [report correlation (sublist x 0 (length x - lag)) (sublist x lag (length x))]
+  )
 end
 
 to-report normal-pdf [x m s]
@@ -247,7 +265,7 @@ taxrate
 taxrate
 0
 0.4
-0.03
+0.015
 0.001
 1
 NIL
@@ -262,7 +280,7 @@ N
 N
 10
 10000
-3000.0
+1000.0
 10
 1
 NIL
@@ -477,7 +495,7 @@ CHOOSER
 tax_regime
 tax_regime
 "wealth" "wealth gains" "realized wealth gains"
-1
+0
 
 TEXTBOX
 12
@@ -731,7 +749,7 @@ realization_scale
 realization_scale
 1
 5
-1.5
+3.7
 0.1
 1
 NIL
@@ -774,7 +792,7 @@ CHOOSER
 immobility_interval
 immobility_interval
 "past_tick_1" "past_tick_2" "past_tick_3"
-0
+2
 
 CHOOSER
 928
@@ -888,22 +906,22 @@ Theoretical growth factors
 1
 
 MONITOR
-1180
-625
-1240
-670
+1586
+90
+1646
+135
 autocor
-autocorrelation autocorrelation_int
+autocorrelation_ensemble autocorrelation_int
 4
 1
 11
 
 PLOT
-955
-670
-1240
-835
-autocorrelation wealth individuals
+1361
+134
+1646
+299
+correlation ensemble with lagged
 NIL
 NIL
 0.0
@@ -914,28 +932,74 @@ true
 false
 "" ""
 PENS
-"3" 1.0 0 -16777216 true "" "plot autocorrelation autocorrelation_int"
+"3" 1.0 0 -16777216 true "" "plot autocorrelation_ensemble autocorrelation_int"
 
 CHOOSER
-1030
-625
-1177
-670
+1436
+90
+1583
+135
 autocorrelation_lag
 autocorrelation_lag
 "past_tick_1" "past_tick_2" "past_tick_3"
-0
+2
 
 SWITCH
-1065
-835
-1240
-868
+1471
+300
+1646
+333
 autocorr_log_wealth?
 autocorr_log_wealth?
 0
 1
 -1000
+
+PLOT
+958
+648
+1158
+798
+mean autocorrelation
+NIL
+NIL
+0.0
+10.0
+0.0
+1.0
+true
+false
+"" ""
+PENS
+"default" 1.0 1 -16777216 true "" "clear-plot\nforeach range 10 [x -> plotxy x mean [autocorrelation normalized_wealth_list x] of turtles]"
+
+PLOT
+1159
+648
+1359
+798
+autocorrelation lag 3
+NIL
+NIL
+0.0
+10.0
+0.0
+1.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot mean [autocorrelation normalized_wealth_list 3] of turtles"
+
+TEXTBOX
+1362
+58
+1597
+88
+Probably remove this later
+18
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
