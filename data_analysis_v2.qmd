@@ -329,6 +329,48 @@ d2 |> filter(N == 10000, stop_tick == 200, allowance_fraction_median == 0) |>
 
 For the value of Wealth Tax = 0.015 this implies comparable values of Wealth Gains Tax = `r (0.015 - shift_high_wealthgains) * scale_down_high_wealthgains` and Realized Wealth Gains Tax (1.5) = `r (0.015 - shift_high_realizedwealthgains1_5) * scale_down_high_realizedwealthgains1_5`.
 
+### Taxshare vs. other measures
+
+```{r}
+#| fig-cap: Comparison of tax regimes with scales tax rates, version 1
+d2 |> filter(N == 10000, stop_tick == 200, allowance_fraction_median == 0) |> 
+ rename(`Tail Exponent` = tailexp_top10_stop_tick, 
+           Gini =gini_stop_tick, 
+           `Share Top 1%` = share_top1_stop_tick, 
+           `Immobility Top 10%` = stillintop10_past_tick_3,
+           Taxshare = taxshare_stop_tick,
+           Taxrate = taxrate) |> 
+ pivot_longer(c(`Tail Exponent`, `Gini`, `Share Top 1%`, `Immobility Top 10%`,Taxrate)) |>
+# rename(N = Ns) |> 
+ ggplot(aes(Taxshare, value, color = `Tax Regime`)) + 
+ geom_point(alpha = 0.05) +
+ geom_smooth(method = 'gam', formula = y ~ s(x, bs = "cs"), xseq = seq(0,0.028,0.001),) +
+ facet_wrap(~name, scales = "free_y") +
+ labs(x = "tax rate scaled by tax regimes") +
+ guides(color = guide_legend(position = "bottom", nrow = 1)) +
+ theme_minimal()
+```
+
+```{r}
+#| fig-cap: Comparison of tax regimes with scales tax rates, version 1
+d2 |> filter(N == 10000,stop_tick == 200, allowance_fraction_median == 0) |> 
+ rename(`Tail Exponent` = tailexp_top10_stop_tick, 
+           Gini =gini_stop_tick, 
+           `Share Top 1%` = share_top1_stop_tick, 
+           `Immobility Top 10%` = stillintop10_past_tick_3,
+           Taxshare = taxshare_stop_tick,
+           Taxrate = taxrate) |> 
+ pivot_longer(c(`Tail Exponent`, `Gini`, `Share Top 1%`, `Immobility Top 10%`,Taxrate)) |>
+# rename(N = Ns) |> 
+ ggplot(aes(Taxshare, value, color = `Tax Regime`)) + 
+# geom_point(alpha = 0.05) +
+ geom_smooth(method = 'gam', formula = y ~ s(x, bs = "cs"), xseq = seq(0,0.028,0.001),) +
+ facet_wrap(~name, scales = "free_y") +
+ labs(x = "tax rate scaled by tax regimes") +
+ guides(color = guide_legend(position = "bottom", nrow = 1)) +
+ theme_minimal()
+```
+
 
 ### Tax allowances
 

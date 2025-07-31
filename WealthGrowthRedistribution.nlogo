@@ -208,10 +208,6 @@ to-report share_top report max [wealth] of turtles / sum [wealth] of turtles end
 to-report fraction_in_fit report num-wealth-above-threshold [wealth] of turtles / count turtles end
 to-report fraction_above_mean report count turtles with [wealth > mean [wealth] of turtles] / count turtles end
 
-to-report correlation [x y]
-  let covariance mean (map [[a b] -> (a - mean x) * (b - mean y)] x y)
-  report covariance / (standard-deviation x * standard-deviation y)
-end
 to-report autocorrelation_ensemble [lag]
   ifelse (length [wealth_list] of turtle 0 < lag + 1) [report 0] [
   report correlation map [turt -> ifelse-value (autocorr_log_wealth?) [[(log (item 0 wealth_list) 10)] of turt] [[(item 0 normalized_wealth_list)] of turt]] sort-on [who] turtles
@@ -223,6 +219,10 @@ to-report autocorrelation [x lag] ; This is for a list x
     (lag = 0) [report 1]
     [report correlation (sublist x 0 (length x - lag)) (sublist x lag (length x))]
   )
+end
+to-report correlation [x y]
+  let covariance mean (map [[a b] -> (a - mean x) * (b - mean y)] x y)
+  report covariance / (standard-deviation x * standard-deviation y)
 end
 
 to-report normal-pdf [x m s]
