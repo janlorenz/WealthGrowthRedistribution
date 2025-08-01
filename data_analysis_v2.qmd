@@ -267,14 +267,19 @@ We hand-fitted two scaling factors such that outcome measures for different tax 
 ```{r}
 #| fig-cap: Comparison of tax regimes with scales tax rates, version 1
 d2 |> filter(N == 10000, stop_tick == 200, allowance_fraction_median == 0) |> 
- summarize(`Mean Tail Exponent` = mean(tailexp_top10_stop_tick), 
+ summarize(`Mean Tail Exponent 10%` = mean(tailexp_top10_stop_tick), 
+           `Mean Tail Exponent 1%` = mean(tailexp_top1_stop_tick), 
            `Mean Gini` = mean(gini_stop_tick), 
            `Mean Share Top 1%` = mean(share_top1_stop_tick), 
            `Mean Immobility Top 10%` = mean(stillintop10_past_tick_3),
+           `Mean Share Top 10%` = mean(share_top10_stop_tick), 
+           `Mean Immobility Bottom 50%` = mean(stillinbottom50_past_tick_3),
            `Mean taxshare` = mean(taxshare_stop_tick),
            .by = c(`Tax Regime`, taxrate_wealth_scaled_1, Ns)) |> 
- pivot_longer(c(`Mean taxshare`,`Mean Tail Exponent`, `Mean Gini`, `Mean Share Top 1%`, 
-                `Mean Immobility Top 10%`)) |>
+ pivot_longer(c(`Mean Tail Exponent 10%`, `Mean Tail Exponent 1%`, `Mean Gini`, 
+                `Mean Share Top 1%`, `Mean Share Top 10%`, 
+                `Mean Immobility Top 10%`, `Mean Immobility Bottom 50%`, 
+                `Mean taxshare`)) |>
  rename(N = Ns) |> 
  ggplot(aes(taxrate_wealth_scaled_1, value, color = `Tax Regime`)) + 
  geom_line() +
@@ -307,13 +312,18 @@ For the critical value of Wealth Tax = 0.01 this implies critical values of Weal
 ```{r}
 #| fig-cap: Comparison of tax regimes with scales tax rates, version 2
 d2 |> filter(N == 10000, stop_tick == 200, allowance_fraction_median == 0) |> 
- summarize(`Mean Tail Exponent` = mean(tailexp_top10_stop_tick), 
+ summarize(`Mean Tail Exponent 10%` = mean(tailexp_top10_stop_tick), 
+           `Mean Tail Exponent 1%` = mean(tailexp_top1_stop_tick), 
            `Mean Gini` = mean(gini_stop_tick), 
            `Mean Share Top 1%` = mean(share_top1_stop_tick), 
            `Mean Immobility Top 10%` = mean(stillintop10_past_tick_3),
+           `Mean Share Top 10%` = mean(share_top10_stop_tick), 
+           `Mean Immobility Bottom 50%` = mean(stillinbottom50_past_tick_3),
            `Mean taxshare` = mean(taxshare_stop_tick),
            .by = c(`Tax Regime`, taxrate_wealth_scaled_2, Ns)) |> 
- pivot_longer(c(`Mean Tail Exponent`, `Mean Gini`, `Mean Share Top 1%`, `Mean Immobility Top 10%`, 
+ pivot_longer(c(`Mean Tail Exponent 10%`, `Mean Tail Exponent 1%`, `Mean Gini`, 
+                `Mean Share Top 1%`, `Mean Share Top 10%`, 
+                `Mean Immobility Top 10%`, `Mean Immobility Bottom 50%`, 
                 `Mean taxshare`)) |>
  rename(N = Ns) |> 
  ggplot(aes(taxrate_wealth_scaled_2, value, color = `Tax Regime`)) + 
@@ -334,13 +344,17 @@ For the value of Wealth Tax = 0.015 this implies comparable values of Wealth Gai
 ```{r}
 #| fig-cap: Comparison of tax regimes with scales tax rates, version 1
 d2 |> filter(N == 10000, stop_tick == 200, allowance_fraction_median == 0) |> 
- rename(`Tail Exponent` = tailexp_top10_stop_tick, 
+ rename(`Tail Exponent 10%` = tailexp_top10_stop_tick, 
+        `Tail Exponent 1%` = tailexp_top1_stop_tick, 
            Gini =gini_stop_tick, 
            `Share Top 1%` = share_top1_stop_tick, 
+           `Share Top 10%` = share_top10_stop_tick, 
            `Immobility Top 10%` = stillintop10_past_tick_3,
+           `Immobility Bottom 50%` = stillinbottom50_past_tick_3,
            Taxshare = taxshare_stop_tick,
            Taxrate = taxrate) |> 
- pivot_longer(c(`Tail Exponent`, `Gini`, `Share Top 1%`, `Immobility Top 10%`,Taxrate)) |>
+ pivot_longer(c(`Tail Exponent 10%`, `Tail Exponent 1%`, `Gini`, `Share Top 1%`, `Share Top 10%`, 
+                `Immobility Top 10%`,`Immobility Bottom 50%`,Taxrate)) |>
 # rename(N = Ns) |> 
  ggplot(aes(Taxshare, value, color = `Tax Regime`)) + 
  geom_point(alpha = 0.05) +
@@ -353,15 +367,18 @@ d2 |> filter(N == 10000, stop_tick == 200, allowance_fraction_median == 0) |>
 
 ```{r}
 #| fig-cap: Comparison of tax regimes with scales tax rates, version 1
-d2 |> filter(N == 10000,stop_tick == 200, allowance_fraction_median == 0) |> 
- rename(`Tail Exponent` = tailexp_top10_stop_tick, 
+d2 |> filter(N == 10000, stop_tick == 200, allowance_fraction_median == 0) |> 
+ rename(`Tail Exponent 10%` = tailexp_top10_stop_tick, 
+        `Tail Exponent 1%` = tailexp_top1_stop_tick, 
            Gini =gini_stop_tick, 
            `Share Top 1%` = share_top1_stop_tick, 
+           `Share Top 10%` = share_top10_stop_tick, 
            `Immobility Top 10%` = stillintop10_past_tick_3,
+           `Immobility Bottom 50%` = stillinbottom50_past_tick_3,
            Taxshare = taxshare_stop_tick,
            Taxrate = taxrate) |> 
- pivot_longer(c(`Tail Exponent`, `Gini`, `Share Top 1%`, `Immobility Top 10%`,Taxrate)) |>
-# rename(N = Ns) |> 
+ pivot_longer(c(`Tail Exponent 10%`, `Tail Exponent 1%`, `Gini`, `Share Top 1%`, `Share Top 10%`, 
+                `Immobility Top 10%`,`Immobility Bottom 50%`,Taxrate)) |>
  ggplot(aes(Taxshare, value, color = `Tax Regime`)) + 
 # geom_point(alpha = 0.05) +
  geom_smooth(method = 'gam', formula = y ~ s(x, bs = "cs"), xseq = seq(0,0.028,0.001),) +
