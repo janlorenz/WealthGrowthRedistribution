@@ -413,3 +413,30 @@ d2 |> filter(N == 10000, stop_tick == 200, tax_regime == "wealth") |>
  guides(color = guide_legend(position = "bottom", nrow = 1)) +
  theme_minimal()
 ```
+
+
+Now but tax revenue share. 
+
+```{r}
+#| fig-cap: Comparison of tax regimes with scales tax rates, version 1
+d2 |> filter(N == 10000, stop_tick == 200, tax_regime == "wealth") |> 
+ rename(`Tail Exponent 10%` = tailexp_top10_stop_tick, 
+        `Tail Exponent 1%` = tailexp_top1_stop_tick, 
+           Gini =gini_stop_tick, 
+           `Share Top 1%` = share_top1_stop_tick, 
+           `Share Top 10%` = share_top10_stop_tick, 
+           `Immobility Top 10%` = stillintop10_past_tick_3,
+           `Immobility Bottom 50%` = stillinbottom50_past_tick_3,
+           Taxshare = taxshare_stop_tick,
+           Taxrate = taxrate) |> 
+ pivot_longer(c(`Tail Exponent 10%`, `Tail Exponent 1%`, `Gini`, `Share Top 1%`, `Share Top 10%`, 
+                `Immobility Top 10%`,`Immobility Bottom 50%`,Taxrate)) |>
+ #rename(N = Ns) |> 
+ mutate(`Allowance as fraction median` = factor(allowance_fraction_median)) |> 
+ ggplot(aes(Taxshare, value, color = `Allowance as fraction median`)) + 
+ geom_point(alpha=0.05) +
+ geom_smooth(method = 'gam', formula = y ~ s(x, bs = "cs"), xseq = seq(0,0.028,0.001),) +
+ facet_wrap(~name, scales = "free_y") +
+ guides(color = guide_legend(position = "bottom", nrow = 1)) +
+ theme_minimal()
+```
