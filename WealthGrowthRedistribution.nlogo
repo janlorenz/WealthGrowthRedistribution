@@ -16,7 +16,11 @@ turtles-own [wealth
              in50to90
              intop10
              intop1
-             intop01]
+             intop01
+             rank
+             rank_history
+             autocor_rank
+]
 
 to setup
   clear-all
@@ -43,6 +47,9 @@ to initialize
   set intop10 (list)
   set intop1 (list)
   set intop01 (list)
+  set rank 1
+  set rank_history (list)
+  set autocor_rank 1
 end
 
 to restart_normalized_wealth_list
@@ -101,6 +108,8 @@ to update_data
   set old_mean_wealth mean [ wealth ] of turtles
   let sorted-wealth reverse sort [wealth] of turtles
   ask turtles [
+    set rank (1 + count turtles with [wealth > [wealth] of myself]) / count turtles
+    set rank_history fput rank rank_history
     let quantile_top50 item round (0.5 * count turtles) sorted-wealth
     let quantile_top10 item round (0.1 * count turtles) sorted-wealth
     let quantile_top1 item round (0.01 * count turtles) sorted-wealth
@@ -113,6 +122,7 @@ to update_data
     set normalized_wealth wealth / old_mean_wealth
     set wealth_list fput wealth wealth_list
     set normalized_wealth_list fput normalized_wealth normalized_wealth_list
+    ;set autocor_rank foreach range 10 [x -> plotxy x mean [autocorrelation normalized_wealth_list x] of turtles]
   ]
 end
 
@@ -210,9 +220,12 @@ to-report fraction_above_mean report count turtles with [wealth > mean [wealth] 
 
 to-report autocorrelation_ensemble [lag]
   ifelse (length [wealth_list] of turtle 0 < lag + 1) [report 0] [
-  report correlation map [turt -> ifelse-value (autocorr_log_wealth?) [[(log (item 0 wealth_list) 10)] of turt] [[(item 0 normalized_wealth_list)] of turt]] sort-on [who] turtles
-                     map [turt -> ifelse-value (autocorr_log_wealth?) [[(log (item lag wealth_list) 10)] of turt] [[(item lag normalized_wealth_list)] of turt]] sort-on [who] turtles
+  report correlation map [turt -> [item 0 rank_history] of turt] sort-on [who] turtles
+                     map [turt -> [item lag rank_history] of turt] sort-on [who] turtles
   ]
+;  report correlation map [turt -> ifelse-value (autocorr_log_wealth?) [[(log (item 0 wealth_list) 10)] of turt] [[(item 0 normalized_wealth_list)] of turt]] sort-on [who] turtles
+;                     map [turt -> ifelse-value (autocorr_log_wealth?) [[(log (item lag wealth_list) 10)] of turt] [[(item lag normalized_wealth_list)] of turt]] sort-on [who] turtles
+;  ]
 end
 to-report autocorrelation [x lag] ; This is for a list x
   (ifelse (length x < lag + 2 or length x < 2) [report 0]
@@ -971,7 +984,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 1 -16777216 true "" "clear-plot\nforeach range 10 [x -> plotxy x mean [autocorrelation normalized_wealth_list x] of turtles]"
+"default" 1.0 1 -16777216 true "" "clear-plot\nforeach range 10 [x -> plotxy x mean [autocorrelation rank_history x] of turtles]"
 
 PLOT
 1159
@@ -989,7 +1002,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot mean [autocorrelation normalized_wealth_list 3] of turtles"
+"default" 1.0 0 -16777216 true "" "plot mean [autocorrelation rank_history 3] of turtles"
 
 TEXTBOX
 1362
