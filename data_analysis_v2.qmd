@@ -30,10 +30,10 @@ shift_high_realizedwealthgains1_5 = -0.01
 # Compute a few more variables
 wrangle <- function(d) d |> 
   mutate(Ns = format(N, scientific = FALSE, big.mark = ","), # renaming for plots
-        `Tax Regime` = case_when(
-         tax_regime == "wealth" ~ "Wealth Tax", 
-         tax_regime == "wealth gains" ~ "Wealth Gains Tax", 
-         tax_regime == "realized wealth gains" ~ "Realized Wealth Gains Tax (1.5)"), # renaming for plots
+         `Tax Regime` = case_when(
+          tax_regime == "wealth" ~ "Wealth Tax", 
+          tax_regime == "wealth gains" ~ "Wealth Gains Tax", 
+          tax_regime == "realized wealth gains" ~ "Realized Wealth Gains Tax"), # renaming for plots
          taxrate_wealth_scaled_1 = case_when(
           tax_regime == "wealth" ~ taxrate,
           tax_regime == "wealth gains" ~ taxrate/scale_down_low_wealthgains,
@@ -42,9 +42,11 @@ wrangle <- function(d) d |>
           tax_regime == "wealth" ~ taxrate,
           tax_regime == "wealth gains" ~ taxrate/scale_down_high_wealthgains + shift_high_wealthgains,
           tax_regime == "realized wealth gains" ~ taxrate/scale_down_high_realizedwealthgains1_5 + shift_high_realizedwealthgains1_5),
-        across(starts_with("tailexp"), \(x) x - 1))
+         across(starts_with("tailexp"), \(x) x - 1)) 
 d1 <- read_parquet("simdata_v1/WealthGrowthRedistribution_StrippedDown experiments v1 all.parquet") |> wrangle()
-d2 <- read_parquet("simdata_v2/WealthGrowthRedistribution_StrippedDown experiments v2 all.parquet") |> wrangle()
+d2 <- read_parquet("simdata_v2/WealthGrowthRedistribution_StrippedDown experiments v2 all.parquet") |> wrangle()|> 
+ mutate(`Tax Regime` = 
+         if_else(tax_regime == "realized wealth gains", paste0(`Tax Regime`, " (", realization_scale, ")"), `Tax Regime`))
 ```
 
 We did two simulation studies with two different versions of the model. Both simulations are comparable. The model used in the first version is identical in behavior with the second model for specific parameter values. The second model is an extension of the first one. The newer model includes a third tax regime called "Realized Wealth Gains Tax (1.5)" and also included the specification of an allowance threshold specified by a fraction of the median of the taxbase at the current time step. 
@@ -343,7 +345,8 @@ For the value of Wealth Tax = 0.015 this implies comparable values of Wealth Gai
 
 ```{r}
 # fig-cap: Comparison of tax regimes with scales tax rates, version 1
-d2 |> filter(N == 10000, stop_tick == 200, allowance_fraction_median == 0) |> 
+d2 |> filter(N == 10000, stop_tick == 200, allowance_fraction_median == 0) |>
+ count(tax_regime, allowance_fraction_median, realization_scale)
  rename(`Tail Exponent 10%` = tailexp_top10_stop_tick, 
         `Tail Exponent 1%` = tailexp_top1_stop_tick, 
         Gini =gini_stop_tick, 
@@ -386,7 +389,42 @@ d2 |> filter(N == 10000, stop_tick == 200, allowance_fraction_median == 0) |>
  geom_smooth(method = 'gam', formula = y ~ s(x, bs = "cs"), xseq = seq(0,0.028,0.001),) +
  facet_wrap(~name, scales = "free_y") +
  labs(x = "Taxshare") +
- guides(color = guide_legend(position = "bottom", nrow = 1)) +
+ guides(color = guide_legend(position = "bottom", nrow = 2)) +
+ theme_minimal()
+```
+
+
+```{r}
+# fig-cap: #Comparison of tax regimes with scales tax rates, version 1
+d2_taxshare <- d2 |> filter(N == 10000, stop_tick == 200, allowance_fraction_median == 0) |> 
+ rename(`Tail Exponent 10%` = tailexp_top10_stop_tick, 
+        `Tail Exponent 1%` = tailexp_top1_stop_tick, 
+        Gini =gini_stop_tick, 
+        `Share Top 1%` = share_top1_stop_tick, 
+        `Share Top 10%` = share_top10_stop_tick, 
+        `Immobility Top 10%` = stillintop10_past_tick_3,
+        `Immobility Bottom 50%` = stillinbottom50_past_tick_3,
+        `Long-term Realized Growth Rate` = growth_rate_all,  
+        Taxshare = taxshare_stop_tick,
+        Taxrate = taxrate) |> 
+ pivot_longer(c(`Tail Exponent 10%`, `Tail Exponent 1%`, `Gini`, `Share Top 1%`, `Share Top 10%`, 
+                `Immobility Top 10%`,`Immobility Bottom 50%`,`Long-term Realized Growth Rate`,Taxrate)) |>
+ mutate(Taxshare_rounded = round(Taxshare, digits = 3)) |>
+ #mutate(Taxshare_rounded = 2*round(Taxshare/2, digits = 3)) |>
+ summarize(median = median(value),mean = mean(value), n = n(), sd = sd(value), q1=quantile(value, 0.25), q3=quantile(value,0.75),
+           stderr = sd/sqrt(n), .by = c(name, Taxshare_rounded, `Tax Regime`)) 
+d2_taxshare |> filter(Taxshare_rounded <= 0.03, `Tax Regime` %in% c("Wealth Tax", "Wealth Gains Tax", "Realized Wealth Gains Tax (1.5)")) |> 
+ ggplot(aes(Taxshare_rounded, median, color = `Tax Regime`)) + 
+# geom_point(alpha = 0.05) +
+# geom_smooth(method = 'gam', formula = y ~ s(x, bs = "cs"), xseq = seq(0,0.028,0.001),) +
+ geom_line() +
+ geom_point() +
+ geom_errorbar(aes(ymin = q1, ymax = q3), width = 0.0005) +
+ # geom_errorbar(aes(ymin = mean - sd, ymax = mean + sd), width = 0.0005) +
+ #xlim(c(0,0.025)) +
+ facet_wrap(~name, scales = "free_y") +
+ labs(x = "Taxshare (rounded)") +
+ guides(color = guide_legend(position = "bottom", nrow = 2)) +
  theme_minimal()
 ```
 
@@ -442,11 +480,5 @@ d2 |> filter(N == 10000, stop_tick == 200, tax_regime == "wealth") |>
  facet_wrap(~name, scales = "free_y") +
  guides(color = guide_legend(position = "bottom", nrow = 1)) +
  theme_minimal()
-```
-
-
-## For Jan
-
-```{r}
 ```
 
