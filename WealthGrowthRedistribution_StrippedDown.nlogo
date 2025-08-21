@@ -477,7 +477,7 @@ SLIDER
 10
 319
 237
-353
+352
 allowance_fraction_median
 allowance_fraction_median
 0
@@ -492,7 +492,7 @@ SLIDER
 97
 258
 270
-292
+291
 realization_scale
 realization_scale
 1
@@ -507,7 +507,7 @@ SLIDER
 10
 416
 193
-450
+449
 base_taxrate_wealth
 base_taxrate_wealth
 0

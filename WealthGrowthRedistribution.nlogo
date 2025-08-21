@@ -110,6 +110,7 @@ to update_data
   ask turtles [
     set rank (1 + count turtles with [wealth > [wealth] of myself]) / count turtles
     set rank_history fput rank rank_history
+    if length rank_history > 100 [set rank_history butlast rank_history]
     let quantile_top50 item round (0.5 * count turtles) sorted-wealth
     let quantile_top10 item round (0.1 * count turtles) sorted-wealth
     let quantile_top1 item round (0.01 * count turtles) sorted-wealth
@@ -278,7 +279,7 @@ taxrate
 taxrate
 0
 0.4
-0.015
+0.07
 0.001
 1
 NIL
@@ -730,7 +731,7 @@ SWITCH
 41
 visualize_world
 visualize_world
-0
+1
 1
 -1000
 
@@ -971,26 +972,26 @@ autocorr_log_wealth?
 PLOT
 958
 648
-1158
+1264
 798
 mean autocorrelation
 NIL
 NIL
 0.0
-10.0
-0.0
+30.0
+-0.2
 1.0
-true
+false
 false
 "" ""
 PENS
-"default" 1.0 1 -16777216 true "" "clear-plot\nforeach range 10 [x -> plotxy x mean [autocorrelation rank_history x] of turtles]"
+"default" 1.0 1 -16777216 true "" "clear-plot\nforeach range 30 [x -> plotxy x mean [autocorrelation rank_history x] of turtles]"
 
 PLOT
-1159
-648
-1359
-798
+1344
+652
+1544
+802
 autocorrelation lag 3
 NIL
 NIL

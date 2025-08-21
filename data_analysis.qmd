@@ -17,7 +17,7 @@ editor_options:
 library(tidyverse)
 library(marquee)
 library(arrow)
-d <- read_parquet("simdata/WealthGrowthRedistribution_StrippedDown experiments all.parquet") |> 
+d <- read_parquet("simdata_v1/WealthGrowthRedistribution_StrippedDown experiments v1 all.parquet") |> 
  mutate(Ns = format(N, scientific = FALSE, big.mark = ","),
         `Tax Regime` = if_else(tax_regime == "wealth", "Wealth Tax", "Wealth Gains Tax"),
         # taxrate_wealth_scaled = if_else(tax_regime == "wealth", 7.5*taxrate, taxrate))

@@ -1,10 +1,11 @@
 library(tidyverse)
 library(arrow)
-d <- read_parquet("simdata/WealthGrowthRedistribution_StrippedDown experiments all.parquet") |> 
+d <- read_parquet("simdata_v1/WealthGrowthRedistribution_StrippedDown experiments v1 all.parquet") |> 
  mutate(Ns = format(N, scientific = FALSE, big.mark = ","),
         `Tax Regime` = if_else(tax_regime == "wealth", "Wealth Tax", "Wealth Gains Tax"))
 
-d |> count(tax_regime, N, taxrate)
+d |> count(tax_regime, N, taxrate) |> View()
+
 
 # Growth rate
 vizspecs_growthrate <- function(g) g +
@@ -41,6 +42,7 @@ vizspecs_growthrate_meanstderr <- function(g) g +
 
 d |> filter(N == 10000 | N == 100000) |> ggplot(aes(taxrate, growth_rate_all)) |> vizspecs_growthrate()
 d |> ggplot(aes(taxrate, growth_rate_all, color = N)) |> vizspecs_growthrate_means()
+d |> ggplot(aes(taxrate, growth_rate_all, color = N)) |> vizspecs_growthrate_meanstderr()
 
 
 

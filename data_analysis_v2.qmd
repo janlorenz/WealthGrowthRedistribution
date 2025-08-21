@@ -1,5 +1,5 @@
 ---
-title: "Figures for WealthGrowthRedistribution Simulation Analysis"
+title: "WealthGrowthRedistribution Simulation Analysis"
 format: 
   html: 
     toc: true
@@ -15,7 +15,8 @@ bibliography: references.bib
 # Simulation studies
 
 ```{r}
-#| include: false
+#| echo: false
+#| message: false
 library(tidyverse)
 library(marquee) # For using markdown in ggplots
 library(arrow) # For reading parquet data
@@ -259,8 +260,8 @@ d1 |> summarize(mean_growth_rate = mean(growth_rate_all),
  ggplot(aes(taxrate, mean_growth_rate, color = N)) + 
  geom_line() +
  facet_wrap(~`Tax Regime`, scales = "free_x") +
- labs(x = "tax rate", y = "Average fitted tail exponent (Top 10%)", 
-      caption = paste(nrow(d1 |> filter(N==10000, taxrate==0.05, tax_regime=="wealth", stop_tick==200)),"simulation runs per tax rate for N=1,000 and N=10,000; 100 runs for the other N")) +
+ labs(x = "tax rate", y = "Average long term growth rates", 
+      caption = "") +
  theme_minimal()
 ```
 
@@ -453,7 +454,7 @@ d2 |> filter(N == 10000, stop_tick == 200, tax_regime == "wealth") |>
  theme_minimal()
 ```
 
-Now but tax revenue share. @bouchaud2000
+Now but tax revenue share.
 
 ```{r}
 # fig-cap: #Comparison of tax regimes with scales tax rates, version 1
@@ -488,4 +489,4 @@ Our model insight adds to that question in two ways: First, loss of growth poten
 
 On the first point: The model shows that the loss of growth potential can be eliminated by wealth taxation and redistribution. This is a strong argument for wealth taxation, which is often seen as an obstacle to economic growth. The model also shows that the level of taxation does not have to be very high to achieve this effect. Further on, the model shows that wealth taxation and redistribution naturally lead to a more stable and equitable distribution of wealth which may be conducive to economic growth, given the empirical evidence that many countries with high levels of wealth taxation tend to have economic growth and that wealthiest countries have typically not the most unequal wealth distributions.
 
-On the second point: Focussing on simulation runs with the largest growth rates in a limited time period will create a selection bias towards cases with no or low wealth taxation. Extrapolating this to the real world may lead to the wrong conclusion that wealth taxation is detrimental to economic growth, because the most growing countries have no wealth taxation neglecting the possibility that this is driven by a few lucky streaks of the super rich. Anyway, causal reasoning based on selection of best cases is flawed whenever randomness is subject to play a non-negligible role on the measure selection is based on. The better way would be to select by input parameters like wealth tax regimes and tax rates and then study the output measures. 
+On the second point: Focussing on simulation runs with the largest growth rates in a limited time period will create a selection bias towards cases with no or low wealth taxation. Extrapolating this to the real world may lead to the wrong conclusion that wealth taxation is detrimental to economic growth, because the most growing countries have no wealth taxation neglecting the possibility that this is driven by a few lucky streaks of the super rich. Anyway, causal reasoning based on selection of best cases is flawed whenever randomness is subject to play a non-negligible role on the measure selection is based on. The better way would be to select by input parameters like wealth tax regimes and tax rates and then study the output measures.
